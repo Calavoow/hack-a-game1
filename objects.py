@@ -13,7 +13,7 @@ class Line:
 	# custom toString method (called __repr__ in python)
 	def __repr__(self):
 		return  "LINE[(%f, %f), (%f, %f)]" % (self.p1[0], self.p1[1], self.p2[0], self.p2[1])
-	
+
 	#Checks if this line segment intersects with another line segment
 	#From: http://stackoverflow.com/questions/7069420/check-if-two-line-segments-are-colliding-only-check-if-they-are-intersecting-n
 	def intersects(self, other) :
@@ -55,7 +55,7 @@ class Line:
 		y = a * x + b
 		return array([x, y])		
 	
-	def closest_intersection(self, pos, other_lines):
+	def closest_intersection(self, pos, other_lines, ignore_lines = []):
 		"""Find the closest other intersecting line with self.
 		""" 
 		msg = "Starting intersection with line ", self, " at pos ", pos, "\n"
@@ -67,30 +67,30 @@ class Line:
 		smallest_dist = float("inf")
 		
 		for line in other_lines:
-			
-			if line.intersects( self ):
-				intersection_point = line.intersection_point( self )
-				msg += "Intersection point = ", intersection_point, ", intersecting line = ", line, "\n"
-				dist = linalg.norm( intersection_point - pos )
-				if dist < smallest_dist:
-						smallest_dist = dist
-						closest_line = line
-				elif dist == smallest_dist:
-					# SUPER DUPER CORNERCASE, the line intersects a place where two lines overlap/touch (probably a corner)
-					print "Extreme corner bounce, intersection point = ", intersection_point
+			if line not in ignore_lines:
+				if line.intersects( self ):
+					intersection_point = line.intersection_point( self )
+					msg += "Intersection point = ", intersection_point, ", intersecting line = ", line, "\n"
+					dist = linalg.norm( intersection_point - pos )
+					if dist < smallest_dist:
+							smallest_dist = dist
+							closest_line = line
+					elif dist == smallest_dist:
+						# SUPER DUPER CORNERCASE, the line intersects a place where two lines overlap/touch (probably a corner)
+						print "Extreme corner bounce, intersection point = ", intersection_point
 					
 		msg+= "Closest line was ", closest_line, "\n"
 		#if closest_line != None: print msg
 		return closest_line
 	
 	#Returns the closest intersecting obstacle to pos
-	def closest_intersecting_obstacle(self, pos, obstacle_list):
+	def closest_intersecting_obstacle(self, pos, obstacle_list, ignore_lines = []):
 		closest_obstacle = None
 		smallest_dist = float("inf")
 		
 		for obstacle in obstacle_list:
 			# Get the closest line in the obstacle
-			closest_line = self.closest_intersection_with_obstacle(pos, obstacle)
+			closest_line = self.closest_intersection_with_obstacle(pos, obstacle, ignore_lines = ignore_lines )
 			if closest_line != None:
 				intersection_point = closest_line.intersection_point( self )
 				dist = linalg.norm( intersection_point - pos )
@@ -102,11 +102,11 @@ class Line:
 		return closest_obstacle
 	
 	#Returns the closest intersecting line of the obstacle
-	def closest_intersection_with_obstacle(self, pos, obstacle):
+	def closest_intersection_with_obstacle(self, pos, obstacle, ignore_lines = []):
 		if obstacle == None: 
 			return None
 		else:
-			return self.closest_intersection(pos, obstacle.translated_lines())
+			return self.closest_intersection(pos, obstacle.translated_lines(), ignore_lines = ignore_lines)
 		
 	
 	#Returns the a and b of the (y = ax + b) representation of this line
