@@ -34,17 +34,17 @@ class Line:
 			return None;
 		elif self.p1[0] == self.p2[0]:
 			x = self.p1[0]
-			(a, b) = other.calcAB()
+			(a, b) = other.calc_ab()
 			y = a * x + b
 			return array([x, y])
 		elif other.p1[0] == other.p2[0]:
 			x = other.p1[0]
-			(a, b) = self.calcAB()
+			(a, b) = self.calc_ab()
 			y = a * x + b
 			return array([x, y])
 
-		(a, b) = self.calcAB()
-		(c, d) = other.calcAB()
+		(a, b) = self.calc_ab()
+		(c, d) = other.calc_ab()
 		#In case the lines are parallel
 		if (a == c): return None
 		x = (d - b) / (a - c)
@@ -52,7 +52,7 @@ class Line:
 		return array([x, y])		
 	
 	#Returns the a and b of the (y = ax + b) representation of this line
-	def calcAB(self):
+	def calc_ab(self):
 		x1 = self.p1[0]
 		y1 = self.p1[1]
 		x2 = self.p2[0]
@@ -101,10 +101,10 @@ class Obstacle(pygame.sprite.Sprite):
 		if isc_lines.length == 0: None
 		#Else, select the line closest to the other line's first point
 		else:
-			mindist = linalg.norm((isc_lines[0].intersectionPoint(other_line) - other_line.p1))
+			mindist = linalg.norm((isc_lines[0].intersection_point(other_line) - other_line.p1))
 			closest = isc_lines[0]
 			for line in isc_lines:
-				dist = linalg.norm((line[0].intersectionPoint(other_line) - other_line.p1))
+				dist = linalg.norm((line[0].intersection_point(other_line) - other_line.p1))
 				if dist < mindist:
 					mindist = dist
 					closest = line
@@ -120,8 +120,6 @@ class Obstacle(pygame.sprite.Sprite):
 		def translate(line): return line.translate(array([self.rect.x, self.rect.y]))
 		return map(translate, self.lines)
 	
-	
-
 #  l1 = Line(array([0.0, 0.0]),array([8.0, 1.0]))
 #  l2 = Line(array([4.0, -5.0]),array([5.0, 2.0]))	
 #  l3 = Line(array([2.0, 2.0]),array([4.0, 3.0]))	
@@ -132,8 +130,8 @@ class Obstacle(pygame.sprite.Sprite):
 
 # l7 = Line(array([0.0, 0.0]),array([4, 0]))
 # l8 = Line(array([2,-1]),array([2.0,5]))
-#print l1.intersectionPoint(l2)	
-#print l5.intersectionPoint(l6)	
+#print l1.intersection_point(l2)	
+#print l5.intersection_point(l6)	
 # print l7.intersects(l8)
-# print l7.intersectionPoint(l8)
+# print l7.intersection_point(l8)
 
