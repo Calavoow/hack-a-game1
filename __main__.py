@@ -1,5 +1,6 @@
 import pygame
 import math
+import objects
 
 from numpy import array, dot, linalg
 from Queue import Queue
@@ -115,17 +116,22 @@ screen = pygame.display.set_mode([screen_width, screen_height])
 all_sprites_list = pygame.sprite.Group()
 block_list = pygame.sprite.Group()
 #Lets make a simple room
-for x in range(screen_width/2 - 10*16, screen_width/2 + 10*16, 16):
-	new_block = Block(x, screen_height/2 + 8*16)
-	block_list.add(new_block)
-	new_block = Block(x, screen_height/2 - 8*16)
-	block_list.add(new_block)
-for y in range(screen_height/2 - 8*16, screen_height/2 + 9*16, 16):
-	new_block = Block(screen_width/2 - 10*16, y)
-	block_list.add(new_block)
-	new_block = Block(screen_width/2 + 10*16, y)
-	block_list.add(new_block)
-all_sprites_list.add( block_list )
+objects.Line(array([201, 150]), array([200,400]))
+objects.Line(array([501, 150]), array([500,400]))
+objects.Line(array([201, 150]), array([501,150]))
+objects.Line(array([200, 400]), array([500,400]))
+
+# for x in range(screen_width/2 - 10*16, screen_width/2 + 10*16, 16):
+# 	new_block = Block(x, screen_height/2 + 8*16)
+# 	block_list.add(new_block)
+# 	new_block = Block(x, screen_height/2 - 8*16)
+# 	block_list.add(new_block)
+# for y in range(screen_height/2 - 8*16, screen_height/2 + 9*16, 16):
+# 	new_block = Block(screen_width/2 - 10*16, y)
+# 	block_list.add(new_block)
+# 	new_block = Block(screen_width/2 + 10*16, y)
+# 	block_list.add(new_block)
+# all_sprites_list.add( block_list )
 #Add guards
 guard_list = pygame.sprite.Group()
 guard_list.add( Guard( 5*screen_width/8, screen_height/2, array([ 0, 1 ])))
@@ -160,7 +166,7 @@ while not done:
 				player.decrease_bounce_angle()
 			elif event.key is pygame.K_RIGHT:
 				player.increase_bounce_angle()
-			elif event.key is pygame.SPACE:
+			elif event.key is pygame.K_SPACE:
 				player.confirm_bounce_angle()
 
 	
@@ -170,6 +176,10 @@ while not done:
 	#Drawing
 	screen.fill((255,255,255))
 	all_sprites_list.draw(screen)
+	pygame.draw.line(screen, (0,0,0), [201, 150], [200, 400])
+	pygame.draw.line(screen, (0,0,0), [501, 150], [500, 400])
+	pygame.draw.line(screen, (0,0,0), [201, 150], [501, 150])
+	pygame.draw.line(screen, (0,0,0), [200, 400], [500, 400])
 
 	#FPS limited to 60
 	clock.tick(60)
