@@ -9,18 +9,18 @@ class Block(objects.Obstacle):
 	def __init__(self, x, y):
 		#The lines surrounding this 16x16 block
 		lines = [
-			objects.Line(array([1, 1]), array([14, 1])),
-			objects.Line(array([14, 1]), array([14, 14])),
-			objects.Line(array([14, 14]), array([1, 14])),
-			objects.Line(array([1, 14]), array([1, 1]))
+			objects.Line(array([0.0, 0.0]), array([15.0, 0.0])),
+			objects.Line(array([15.0, 0.0]), array([15.0, 15.0])),
+			objects.Line(array([15.0, 15.0]), array([0.0, 15.0])),
+			objects.Line(array([0.0, 15.0]), array([0.0, 0.0]))
 		]
 		# Call the parent class (Obstacle) constructor
 		super(Block, self).__init__(lines)
 		#The image will be a 16x16 square
 		self.image = pygame.Surface((16,16))
-		self.image.fill((80, 0, 0))
+		self.image.fill((255,170,0))
 		#Let's draw lines on top of the image for debugging
-		self.draw_lines((255,170,0))
+		self.draw_lines((80, 0, 0))
 		#Collision box
 		self.rect = self.image.get_rect()
 		
@@ -32,10 +32,10 @@ class SimpleRoom(objects.Obstacle):
 	def __init__(self):
 		#The lines of which this room consists
 		lines = [
-			objects.Line(array([201, 150]), array([200,400])),
-			objects.Line(array([501, 150]), array([500,400])),
-			objects.Line(array([201, 150]), array([501,150])),
-			objects.Line(array([200, 400]), array([500,400]))
+			objects.Line(array([201.0,150.0]), array([200.0,400.0])),
+			objects.Line(array([501.0, 150.0]), array([500.0,400.0])),
+			objects.Line(array([201.0, 150.0]), array([501.0,150.0])),
+			objects.Line(array([200.0, 400.0]), array([500.0,400.0]))
 		]
 		# Call the parent class (Obstacle) constructor
 		super(SimpleRoom, self).__init__(lines)
@@ -65,6 +65,8 @@ class Unit(pygame.sprite.Sprite):
 		self.pos = pos 
 		# And movement
 		self.movement = movement 
+
+		self.path_calc = PathCalculator(self)
 	
 	@property
 	def pos(self):
@@ -81,30 +83,16 @@ class Unit(pygame.sprite.Sprite):
 		return self.pos + array([self.rect.width/2, self.rect.height/2])
 	
 	def update(self):
-		new_movement = self.line_collision()
-		if new_movement is not None:
-			self.movement = new_movement
+		if self.path_calc.is_collided():
+			new_direction = self.path_calc.next()
+			# Magnitude * normalized direction
+			self.movement = linalg.norm(self.movement) * new_direction
 
 		# Can't do +=
 		self.pos = self.pos + self.movement
-
-	def line_collision(self):
-		""" Check collision with lines.
-			returns: The new movement vector, if there was a collision. None else.
-		"""
-		movement_line = objects.Line( self.center_pos,
-			self.center_pos + self.movement)
-		intersecting_obstacle = movement_line.closest_intersecting_obstacle(self.pos, obstacles_list)
-		intersecting_line = movement_line.closest_intersection_with_obstacle(self.pos, intersecting_obstacle)
-		if intersecting_line:
-			print "Intersects line at %s" % self.pos
-			#http://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
-			normal = intersecting_line.get_normal()
-			u = dot( self.movement, normal ) * normal 
-			w = self.movement - u
-			return w - u
-		
-		return None 
+	
+	def __repr__(self):
+		return "%s at pos: %s" % (self.__class__.__name__, self.pos )
 
 class Player(Unit):
 	def __init__(self, pos, movement):
@@ -124,15 +112,21 @@ class Player(Unit):
 		# Collision with guard
 		collision_sprite = pygame.sprite.spritecollideany( self, guard_list )
 		if collision_sprite:
-			print "Collided with guard"
+			testtesttest=5
+			#print "Collided with guard"
 
 		# Collision with target
 		collision_sprite = pygame.sprite.spritecollideany( self, target_list )
 		if collision_sprite:
-			print "Collided with target"
+			testtesttest=5
+			#print "Collided with target"
 
-		new_movement = self.line_collision()
-		if new_movement is not None:
+
+		if self.path_calc.is_collided():
+			print "Collision with line."
+			new_direction = self.path_calc.next()
+			# Magnitude * normalized direction
+			new_movement = linalg.norm(self.movement) * new_direction
 			# Adjust the angle of the new_movement, according to bounce input.
 			if not self.bounce_angles.empty():
 				angle = self.bounce_angles.get()
@@ -174,31 +168,57 @@ class Target(Unit):
 
 class PathCalculator():
 	def __init__(self, unit, player=False):
-		self.pos = unit.pos
+		self.pos = unit.center_pos
 		self.direction = unit.movement
-		self.player = player
-		self.angle = 0
+		self.unit = unit 
 
-		self.next()
+		self.ignore_lines = [] 
+		self.direction_queue = Queue()
+		self.direction_queue.put( self.calc_next())
 	
 	def next(self):
-		direction_line = objects.Line( self.pos, self.pos + 1e10 * self.direction )
-		intersecting_obstacle = direction_line.closest_intersecting_obstacle(self.pos, obstacles_list)
-		intersecting_line = direction_line.closest_intersection_with_obstacle(self.pos, intersecting_obstacle)
-		assert intersecting_line is not None, "PathCalculator couldn't find a line to jump to." #Truthy
+		next_direction = self.direction_queue.get()
+		if self.direction_queue.empty():
+			self.direction_queue.put( self.calc_next())
+		print "Next direction for %s: %s" % ( self.unit, next_direction )
+		return next_direction
 
-		# Set new position to intersection point.
-		intersecting_point = direction_line.intersection_point( intersecting_line ) 
-		self.pos = intersecting_point
-		
-		# Then figure out the outbound angle.
-		outbound_direction = self.line_collision(direction_line, intersecting_line)
-		self.movement = outbound_direction / linalg.norm( outbound_direction )
+	def calc_next(self):
+		""" Calculates the next direction of the Unit.
+			returns: A normalized vector, which is the next direction.
+		"""
+		print "Next calculated for %s" % self.unit
+		# Only when self.direction is not the null-vector.
+		if not linalg.norm( self.direction ) == 0.0:
+			direction_line = objects.Line( self.pos, self.pos + 1e10 * self.direction )
+			intersecting_obstacle = direction_line.closest_intersecting_obstacle(
+				self.pos, obstacles_list, ignore_lines=self.ignore_lines)
+			intersecting_line = direction_line.closest_intersection_with_obstacle(
+				self.pos, intersecting_obstacle, ignore_lines=self.ignore_lines)
+			assert intersecting_line is not None, "PathCalculator couldn't find a line to jump to." #Truthy
+
+			# Set new position to intersection point.
+			intersecting_point = direction_line.intersection_point( intersecting_line ) 
+			print "%s intersects at: %s" % (self, intersecting_point)
+			self.pos = intersecting_point
+			self.ignore_lines = [intersecting_line]
+			
+			# Then figure out the outbound angle.
+			outbound_direction = self.line_collision(direction_line, intersecting_line)
+			self.direction = outbound_direction / linalg.norm( outbound_direction )
+		return self.direction
+	
+	def is_collided( self ):
+		movement_line = objects.Line( self.unit.center_pos,
+			self.unit.center_pos + self.unit.movement)
+		intersecting_obstacle = movement_line.closest_intersecting_obstacle(self.unit.pos, obstacles_list)
+		intersecting_line = movement_line.closest_intersection_with_obstacle(self.unit.pos, intersecting_obstacle)
+		return intersecting_line is not None
 
 	def draw(self, surface):
 		# Draw the the outbound direction.
-		point2 = 6*self.movement + self.pos
-		pygame.draw.aaline( surface, (155,155,0),
+		point2 = 6 * self.direction + self.pos
+		pygame.draw.aaline( surface, (255,0,255),
 			[self.pos[0], self.pos[1]],
 			[point2[0], point2[1]])
 
@@ -209,10 +229,13 @@ class PathCalculator():
 		print "Intersects line at %s" % self.pos
 		#http://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
 		normal = intersecting_line.get_normal()
-		print self.direction, normal
 		u = dot( self.direction, normal ) * normal 
 		w = self.direction - u
+		print normal, u, self.direction
 		return w - u
+	
+	def __repr__(self):
+		return "PathCalculator for %s" % self.unit
 
 #Initialize pygame
 pygame.init()
@@ -225,15 +248,24 @@ screen = pygame.display.set_mode([screen_width, screen_height])
 #Make instances to place in the world
 all_sprites_list = pygame.sprite.Group()
 block_list = pygame.sprite.Group()
+
 #Lets make a simple room
 room = SimpleRoom()
 all_sprites_list.add(room)
 obstacles_list = [room]
-
-# lines_list = [objects.Line(array([201, 150]), array([200,400])),
-# objects.Line(array([501, 150]), array([500,400])),
-# objects.Line(array([201, 150]), array([501,150])),
-# objects.Line(array([200, 400]), array([500,400]))]
+# Experiment: let's add some blocks too!
+for block in [
+Block(300, 250),
+Block(300, 300),
+Block(400, 250),
+Block(270, 170),
+Block(350, 250),
+Block(400, 250),
+#Evil cornercase block of doom
+Block(screen_width/2 + 80.0, screen_height/2 + 80.0)
+]:
+	all_sprites_list.add(block)
+	obstacles_list.append(block)
 
 #Add guards
 guard_list = pygame.sprite.Group()
@@ -248,7 +280,7 @@ target_list.add( Target( array([ 3*screen_width/8, screen_height/2 ]), array([ 0
 all_sprites_list.add( target_list )
 
 #And set the player
-player = Player( array([ screen_width/2, screen_height/2 ]), array([ 2.0 ,1.0 ]))
+player = Player( array([ screen_width/2, screen_height/2 ]), array([ -1.0, -1.0 ]))
 all_sprites_list.add(player)
 
 
@@ -279,10 +311,6 @@ while not done:
 	screen.fill((255,255,255))
 	all_sprites_list.draw(screen)
 	player.path_calc.draw(screen)
-# 	pygame.draw.aaline(screen, (0,0,0), [201, 150], [200, 400])
-# 	pygame.draw.aaline(screen, (0,0,0), [501, 150], [500, 400])
-# 	pygame.draw.aaline(screen, (0,0,0), [201, 150], [501, 150])
-# 	pygame.draw.aaline(screen, (0,0,0), [200, 400], [500, 400])
 
 	#FPS limited to 60
 	clock.tick(60)
