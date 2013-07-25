@@ -55,20 +55,44 @@ class Line:
 		"""Find the closest other intersecting line with self.
 		""" 
 		closest_line = None
+		smallest_dist = float("inf")
+		
 		for line in other_lines:
-			# Get all intersecting lines, with movement_line
-			lines = []
+			
 			if line.intersects( self ):
-				lines.append( line )
-			smallest_dist = float("inf")
-			for line in lines:
 				intersection_point = line.intersection_point( self )
 				dist = linalg.norm( intersection_point - pos )
 				if dist < smallest_dist:
-					smallest_dist = dist
-					closest_line = line
+						smallest_dist = dist
+						closest_line = line
+					
+		return closest_line
+	
+	#Returns the closest intersecting obstacle to pos
+	def closest_intersecting_obstacle(self, pos, obstacle_list):
+		closest_obstacle = None
+		smallest_dist = float("inf")
 		
-		return closest_line 
+		for obstacle in obstacle_list:
+			# Get the closest line in the obstacle
+			closest_line = self.closest_intersection_with_obstacle(pos, obstacle)
+			if closest_line != None:
+				intersection_point = closest_line.intersection_point( self )
+				dist = linalg.norm( intersection_point - pos )
+				# Check if this object has the smallest distance so far
+				if dist < smallest_dist:
+					smallest_dist = dist
+					closest_obstacle = obstacle
+		
+		return closest_obstacle
+	
+	#Returns the closest intersecting line of the obstacle
+	def closest_intersection_with_obstacle(self, pos, obstacle):
+		if obstacle == None: 
+			return None
+		else:
+			return self.closest_intersection(pos, obstacle.lines)
+		
 	
 	#Returns the a and b of the (y = ax + b) representation of this line
 	def calc_ab(self):
@@ -110,24 +134,27 @@ class Obstacle(pygame.sprite.Sprite):
 		
 		self.lines = lines
 	
-	# Check what line (if any) of the lines intersects with the given line
-	def intersecting_line(self, other_line):
-		isc_lines = []
-		for line in self.translated_lines:
-			if line.intersects(other_line):
-				isc_lines.append(line)
-		#In the case that no line intersects
-		if isc_lines.length == 0: None
-		#Else, select the line closest to the other line's first point
-		else:
-			mindist = linalg.norm((isc_lines[0].intersection_point(other_line) - other_line.p1))
-			closest = isc_lines[0]
-			for line in isc_lines:
-				dist = linalg.norm((line[0].intersection_point(other_line) - other_line.p1))
-				if dist < mindist:
-					mindist = dist
-					closest = line
-		return closest
+	#def closest_intersection(self, pos, line):
+	#	line.closest_intersection(pos, self.lines)
+	
+# 	# Check what line (if any) of the lines intersects with the given line
+# 	def intersecting_line(self, other_line):
+# 		isc_lines = []
+# 		for line in self.translated_lines:
+# 			if line.intersects(other_line):
+# 				isc_lines.append(line)
+# 		#In the case that no line intersects
+# 		if isc_lines.length == 0: None
+# 		#Else, select the line closest to the other line's first point
+# 		else:
+# 			mindist = linalg.norm((isc_lines[0].intersection_point(other_line) - other_line.p1))
+# 			closest = isc_lines[0]
+# 			for line in isc_lines:
+# 				dist = linalg.norm((line[0].intersection_point(other_line) - other_line.p1))
+# 				if dist < mindist:
+# 					mindist = dist
+# 					closest = line
+# 		return closest
 	
 	# Draw the line on the image
 	def draw_lines(self, color):
