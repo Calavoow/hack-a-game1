@@ -18,6 +18,12 @@ class Block(pygame.sprite.Sprite):
 		#Set position
 		self.rect.x = x
 		self.rect.y = y
+	
+	def get_normal(self):
+		""" Return a fake normal pointing left.
+		"""
+
+		return array([-1,0])
 
 class Player(pygame.sprite.Sprite):
 	def __init__(self, x, y):
@@ -36,13 +42,24 @@ class Player(pygame.sprite.Sprite):
 		self.rect.x = x
 		self.rect.y = y
 
+		self.movement = array([2, 1])
 		self.direction = 0
-		self.speed = 3
+		self.speed = 2
 
 	def update(self):
-		self.rect.x += math.cos(self.direction) * self.speed
-		self.rect.y += math.sin(self.direction) * self.speed
+		#self.rect.x += math.cos(self.direction) * self.speed
+		#self.rect.y += math.sin(self.direction) * self.speed
+		self.rect.x += self.movement[0]
+		self.rect.y += self.movement[1]
 
+		collision_sprite = pygame.sprite.spritecollideany( self, block_list )
+		if collision_sprite:
+			print "collision"
+			#http://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
+			normal = collision_sprite.get_normal()
+			u = dot( self.movement, normal ) * normal 
+			w = self.movement - u
+			self.movement = w - u
 
 #Initialize pygame
 pygame.init()
@@ -83,8 +100,11 @@ done = False
 while not done:
 	#Event processing
 	for event in pygame.event.get(): # User did something
-		if event.type == pygame.QUIT: # If user clicked close
+		if event.type == pygame.QUIT: # Exit button presed.
 			done=True # Flag that we are done so we exit this loop
+		if event.type == pygame.KEYDOWN:
+			if event.key is pygame.K_ESCAPE: # If user clicked close
+				done=True # Flag that we are done so we exit this loop
 	
 	#Game logic
 	all_sprites_list.update()
