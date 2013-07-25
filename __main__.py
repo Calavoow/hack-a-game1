@@ -9,18 +9,18 @@ class Block(objects.Obstacle):
 	def __init__(self, x, y):
 		#The lines surrounding this 16x16 block
 		lines = [
-			objects.Line(array([1, 1]), array([14, 1])),
-			objects.Line(array([14, 1]), array([14, 14])),
-			objects.Line(array([14, 14]), array([1, 14])),
-			objects.Line(array([1, 14]), array([1, 1]))
+			objects.Line(array([0.0, 0.0]), array([15.0, 0.0])),
+			objects.Line(array([15.0, 0.0]), array([15.0, 15.0])),
+			objects.Line(array([15.0, 15.0]), array([0.0, 15.0])),
+			objects.Line(array([0.0, 15.0]), array([0.0, 0.0]))
 		]
 		# Call the parent class (Obstacle) constructor
 		super(Block, self).__init__(lines)
 		#The image will be a 16x16 square
 		self.image = pygame.Surface((16,16))
-		self.image.fill((80, 0, 0))
+		self.image.fill((255,170,0))
 		#Let's draw lines on top of the image for debugging
-		self.draw_lines((255,170,0))
+		self.draw_lines((80, 0, 0))
 		#Collision box
 		self.rect = self.image.get_rect()
 		
@@ -32,10 +32,10 @@ class SimpleRoom(objects.Obstacle):
 	def __init__(self):
 		#The lines of which this room consists
 		lines = [
-			objects.Line(array([201, 150]), array([200,400])),
-			objects.Line(array([501, 150]), array([500,400])),
-			objects.Line(array([201, 150]), array([501,150])),
-			objects.Line(array([200, 400]), array([500,400]))
+			objects.Line(array([201.0,150.0]), array([200.0,400.0])),
+			objects.Line(array([501.0, 150.0]), array([500.0,400.0])),
+			objects.Line(array([201.0, 150.0]), array([501.0,150.0])),
+			objects.Line(array([200.0, 400.0]), array([500.0,400.0]))
 		]
 		# Call the parent class (Obstacle) constructor
 		super(SimpleRoom, self).__init__(lines)
@@ -84,10 +84,10 @@ class Unit(pygame.sprite.Sprite):
 		# Collision with lines 
 		movement_line = objects.Line( self.center_pos,
 			self.center_pos + self.movement)
-		intersecting_obstacle = movement_line.closest_intersecting_obstacle(self.pos, obstacles_list)
-		intersecting_line = movement_line.closest_intersection_with_obstacle(self.pos, intersecting_obstacle)
+		intersecting_obstacle = movement_line.closest_intersecting_obstacle(self.center_pos, obstacles_list)
+		intersecting_line = movement_line.closest_intersection_with_obstacle(self.center_pos, intersecting_obstacle)
 		if intersecting_line:
-			print "Intersects line at %s" % self.pos
+			#print "Intersects line at %s" % self.pos
 			#http://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
 			normal = intersecting_line.get_normal()
 			u = dot( self.movement, normal ) * normal 
@@ -113,20 +113,22 @@ class Player(Unit):
 		# Collision with guard
 		collision_sprite = pygame.sprite.spritecollideany( self, guard_list )
 		if collision_sprite:
-			print "Collided with guard"
+			testtesttest=5
+			#print "Collided with guard"
 
 		# Collision with target
 		collision_sprite = pygame.sprite.spritecollideany( self, target_list )
 		if collision_sprite:
-			print "Collided with target"
+			testtesttest=5
+			#print "Collided with target"
 
 		# Collisiion with lines
 		movement_line = objects.Line( self.center_pos,
 			self.center_pos + self.movement)
-		intersecting_obstacle = movement_line.closest_intersecting_obstacle(self.pos, obstacles_list)
-		intersecting_line = movement_line.closest_intersection_with_obstacle(self.pos, intersecting_obstacle)
+		intersecting_obstacle = movement_line.closest_intersecting_obstacle(self.center_pos, obstacles_list)
+		intersecting_line = movement_line.closest_intersection_with_obstacle(self.center_pos, intersecting_obstacle)
 		if intersecting_line:
-			print "Intersects line at %s" % self.pos
+			#print "Intersects line at %s" % self.pos
 			#http://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
 			normal = intersecting_line.get_normal()
 			u = dot( self.movement, normal ) * normal 
@@ -199,12 +201,13 @@ obstacles_list = [room]
 # Experiment: let's add some blocks too!
 for block in [
 Block(300, 250),
-Block(400, 300),
 Block(300, 300),
 Block(400, 250),
-Block(300, 316),
-Block(300, 332),
-Block(300, 348),
+Block(270, 170),
+Block(350, 250),
+Block(400, 250),
+#Evil cornercase block of doom
+Block(screen_width/2 + 80.0, screen_height/2 + 80.0)
 ]:
 	all_sprites_list.add(block)
 	obstacles_list.append(block)
@@ -222,7 +225,7 @@ target_list.add( Target( array([ 3*screen_width/8, screen_height/2 ]), array([ 0
 all_sprites_list.add( target_list )
 
 #And set the player
-player = Player( array([ screen_width/2, screen_height/2 ]), array([ 2.0 ,1.0 ]))
+player = Player( array([ screen_width/2, screen_height/2 ]), array([ 1.0 , 1.0 ]))
 all_sprites_list.add(player)
 
 

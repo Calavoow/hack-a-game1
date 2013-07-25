@@ -10,6 +10,10 @@ class Line:
 		self.p1 = p1
 		self.p2 = p2
 	
+	# custom toString method (called __repr__ in python)
+	def __repr__(self):
+		return  "LINE[(%f, %f), (%f, %f)]" % (self.p1[0], self.p1[1], self.p2[0], self.p2[1])
+	
 	#Checks if this line segment intersects with another line segment
 	#From: http://stackoverflow.com/questions/7069420/check-if-two-line-segments-are-colliding-only-check-if-they-are-intersecting-n
 	def intersects(self, other) :
@@ -54,6 +58,7 @@ class Line:
 	def closest_intersection(self, pos, other_lines):
 		"""Find the closest other intersecting line with self.
 		""" 
+		msg = "Starting intersection with line ", self, " at pos ", pos, "\n"
 		
 		if other_lines == None:
 			return None
@@ -65,11 +70,17 @@ class Line:
 			
 			if line.intersects( self ):
 				intersection_point = line.intersection_point( self )
+				msg += "Intersection point = ", intersection_point, ", intersecting line = ", line, "\n"
 				dist = linalg.norm( intersection_point - pos )
 				if dist < smallest_dist:
 						smallest_dist = dist
 						closest_line = line
+				elif dist == smallest_dist:
+					# SUPER DUPER CORNERCASE, the line intersects a place where two lines overlap/touch (probably a corner)
+					print "Extreme corner bounce, intersection point = ", intersection_point
 					
+		msg+= "Closest line was ", closest_line, "\n"
+		#if closest_line != None: print msg
 		return closest_line
 	
 	#Returns the closest intersecting obstacle to pos
@@ -122,7 +133,7 @@ class Line:
 	
 	#Draw the line in the specified color on the surface
 	def draw(self, surface, color):
-		pygame.draw.aaline(surface, color, self.p1.tolist(), self.p2.tolist())
+		pygame.draw.line(surface, color, self.p1.tolist(), self.p2.tolist())
 	
 	#Translate a line by a vector t
 	def translate(self, t):
