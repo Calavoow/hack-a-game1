@@ -43,15 +43,12 @@ class Player(pygame.sprite.Sprite):
 		self.rect.y = y
 
 		self.movement = array([2, 1])
-		self.direction = 0
-		self.speed = 2
 
 	def update(self):
-		#self.rect.x += math.cos(self.direction) * self.speed
-		#self.rect.y += math.sin(self.direction) * self.speed
 		self.rect.x += self.movement[0]
 		self.rect.y += self.movement[1]
-
+		
+		# Collision with wall
 		collision_sprite = pygame.sprite.spritecollideany( self, block_list )
 		if collision_sprite:
 			print "collision"
@@ -60,6 +57,44 @@ class Player(pygame.sprite.Sprite):
 			u = dot( self.movement, normal ) * normal 
 			w = self.movement - u
 			self.movement = w - u
+
+		# Collision with guard
+		collision_sprite = pygame.sprite.spritecollideany( self, block_list )
+		if collision_sprite:
+			print "Collided with guard"
+
+class Guard(pygame.sprite.Sprite):
+	def __init__(self, x, y, movement):
+		#super(Player, self).__init__(self)
+		# Call the parent class (Sprite) constructor
+		pygame.sprite.Sprite.__init__(self) 
+		#The image will be a 16x16 circle 
+		self.image = pygame.Surface((16,16))
+		self.image.set_colorkey(( 0, 0, 0))		  
+		pygame.draw.circle(self.image, (255,255,0), [8,8], 8)
+		#Collision box
+		self.rect = self.image.get_rect()
+
+		#Set position
+		self.rect.x = x
+		self.rect.y = y
+
+		self.movement = movement 
+
+	def update(self):
+		self.rect.x += self.movement[0]
+		self.rect.y += self.movement[1]
+
+		# Collision with wall
+		collision_sprite = pygame.sprite.spritecollideany( self, block_list )
+		if collision_sprite:
+			print "collision"
+			#http://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
+			normal = collision_sprite.get_normal()
+			u = dot( self.movement, normal ) * normal 
+			w = self.movement - u
+			self.movement = w - u
+		
 
 #Initialize pygame
 pygame.init()
@@ -76,17 +111,20 @@ block_list = pygame.sprite.Group()
 for x in range(screen_width/2 - 10*16, screen_width/2 + 10*16, 16):
 	new_block = Block(x, screen_height/2 + 8*16)
 	block_list.add(new_block)
-	all_sprites_list.add(new_block)
 	new_block = Block(x, screen_height/2 - 8*16)
 	block_list.add(new_block)
-	all_sprites_list.add(new_block)
 for y in range(screen_height/2 - 8*16, screen_height/2 + 9*16, 16):
 	new_block = Block(screen_width/2 - 10*16, y)
 	block_list.add(new_block)
-	all_sprites_list.add(new_block)
 	new_block = Block(screen_width/2 + 10*16, y)
 	block_list.add(new_block)
-	all_sprites_list.add(new_block)
+all_sprites_list.add( block_list )
+#Add guards
+guard_list = pygame.sprite.Group()
+guard_list.add( Guard( 5*screen_width/8, screen_height/2, array([ 0, 1 ])))
+
+all_sprites_list.add( guard_list )
+
 #And set the player
 player = Player(screen_width/2, screen_height/2)
 all_sprites_list.add(player)
