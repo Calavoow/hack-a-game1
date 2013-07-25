@@ -58,20 +58,44 @@ class Line():
 		v = self.p2 - self.p1
 		# Normal vector -> swap x and y, and multiply one of them by -1
 		normal = array([-v[1], v[0]])
-		return linalg.norm(normal)
+		return normal / linalg.norm(normal)
+	
+	#Draw the line in the specified color on the surface
+	def draw(self, surface, color):
+		pygame.draw.aaline(surface, color, self.p1.toList(), self.p2.toList())
+
+# A superclass for everything that can be bounced against
+class Obstacle(pygame.sprite.Sprite):
+	def __init__(self, lines):
+		# Call the parent class (Sprite) constructor
+		pygame.sprite.Sprite.__init__(self)
+		#Subclasses should provide the rect and the image
 		
-# 		
-# 		
-# 		
-# 
-# l1 = Line(array([0.0, 0.0]),array([8.0, 1.0]))
-# l2 = Line(array([4.0, -5.0]),array([5.0, 2.0]))	
-# l3 = Line(array([2.0, 2.0]),array([4.0, 3.0]))	
-# l4 = Line(array([6.0, 0.0]),array([6.0, 3.0]))	
-# 
-# l5 = Line(array([0.0, 0.0]),array([2.0, 2.0]))	
-# l6 = Line(array([0.0, 2.0]),array([2.0, 0.0]))	
-# 
-# print l1.intersectionPoint(l2)	
-# print l5.intersectionPoint(l6)	
+		self.lines = lines
+	
+	# Check what line (if any) of the lines intersects with the given line
+	def intersectingLine(self, other_line):
+		for line in self.lines:
+			if line.intersects(other_line):
+				return line
+		#In the case that no line intersects
+		return None
+	
+	# Draw the line on the image
+	def drawLines(self, color):
+		for line in self.lines:
+			line.draw(self.image, color)
+	
+	
+
+#  l1 = Line(array([0.0, 0.0]),array([8.0, 1.0]))
+#  l2 = Line(array([4.0, -5.0]),array([5.0, 2.0]))	
+#  l3 = Line(array([2.0, 2.0]),array([4.0, 3.0]))	
+#  l4 = Line(array([6.0, 0.0]),array([6.0, 3.0]))	
+#  
+#  l5 = Line(array([0.0, 0.0]),array([2.0, 2.0]))	
+#  l6 = Line(array([0.0, 2.0]),array([2.0, 0.0]))
+
+#print l1.intersectionPoint(l2)	
+#print l5.intersectionPoint(l6)	
 
