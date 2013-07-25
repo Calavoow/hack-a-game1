@@ -54,6 +54,10 @@ class Line:
 	def closest_intersection(self, pos, other_lines):
 		"""Find the closest other intersecting line with self.
 		""" 
+		
+		if other_lines == None:
+			return None
+		
 		closest_line = None
 		smallest_dist = float("inf")
 		
@@ -91,7 +95,7 @@ class Line:
 		if obstacle == None: 
 			return None
 		else:
-			return self.closest_intersection(pos, obstacle.lines)
+			return self.closest_intersection(pos, obstacle.translated_lines())
 		
 	
 	#Returns the a and b of the (y = ax + b) representation of this line
@@ -122,8 +126,7 @@ class Line:
 	
 	#Translate a line by a vector t
 	def translate(self, t):
-		self.p1 += t
-		self.p2 += t
+		return Line(self.p1 + t, self.p2 + t)
 
 # A superclass for everything that can be bounced against
 class Obstacle(pygame.sprite.Sprite):

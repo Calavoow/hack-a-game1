@@ -191,15 +191,23 @@ screen = pygame.display.set_mode([screen_width, screen_height])
 #Make instances to place in the world
 all_sprites_list = pygame.sprite.Group()
 block_list = pygame.sprite.Group()
+
 #Lets make a simple room
 room = SimpleRoom()
 all_sprites_list.add(room)
 obstacles_list = [room]
-
-# lines_list = [objects.Line(array([201, 150]), array([200,400])),
-# objects.Line(array([501, 150]), array([500,400])),
-# objects.Line(array([201, 150]), array([501,150])),
-# objects.Line(array([200, 400]), array([500,400]))]
+# Experiment: let's add some blocks too!
+for block in [
+Block(300, 250),
+Block(400, 300),
+Block(300, 300),
+Block(400, 250),
+Block(300, 316),
+Block(300, 332),
+Block(300, 348),
+]:
+	all_sprites_list.add(block)
+	obstacles_list.append(block)
 
 #Add guards
 guard_list = pygame.sprite.Group()
@@ -244,11 +252,6 @@ while not done:
 	#Drawing
 	screen.fill((255,255,255))
 	all_sprites_list.draw(screen)
-
-# 	pygame.draw.aaline(screen, (0,0,0), [201, 150], [200, 400])
-# 	pygame.draw.aaline(screen, (0,0,0), [501, 150], [500, 400])
-# 	pygame.draw.aaline(screen, (0,0,0), [201, 150], [501, 150])
-# 	pygame.draw.aaline(screen, (0,0,0), [200, 400], [500, 400])
 
 	#FPS limited to 60
 	clock.tick(60)
