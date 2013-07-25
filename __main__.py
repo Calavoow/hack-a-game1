@@ -57,7 +57,9 @@ class Unit(pygame.sprite.Sprite):
 	
 	def update(self):
 		# Collision with lines 
-		intersecting_line = self.intersects_line()
+		movement_line = objects.Line( self.center_pos,
+			self.center_pos + self.movement)
+		intersecting_line = movement_line.closest_intersection( self.pos, lines_list )
 		if intersecting_line:
 			print "Intersects line at %s" % self.pos
 			#http://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
@@ -68,26 +70,6 @@ class Unit(pygame.sprite.Sprite):
 		
 		# Can't do +=
 		self.pos = self.pos + self.movement
-
-	def intersects_line( self ):
-		movement_line = objects.Line( self.center_pos,
-			self.center_pos + self.movement )
-
-		closest_line = None
-		for line in lines_list:
-			# Get all intersecting lines, with movement_line
-			lines = []
-			if line.intersects( movement_line ):
-				lines.append( line )
-			smallest_dist = float("inf")
-			for line in lines:
-				intersection_point = line.intersection_point( movement_line )
-				dist = linalg.norm( intersection_point - self.pos )
-				if dist < smallest_dist:
-					smallest_dist = dist
-					closest_line = line
-		
-		return closest_line 
 
 class Player(Unit):
 	def __init__(self, pos, movement):
@@ -113,7 +95,9 @@ class Player(Unit):
 			print "Collided with target"
 
 		# Collisiion with lines
-		intersecting_line = self.intersects_line()
+		movement_line = objects.Line( self.center_pos,
+			self.center_pos + self.movement)
+		intersecting_line = movement_line.closest_intersection( self.pos, lines_list )
 		if intersecting_line:
 			print "Intersects line at %s" % self.pos
 			#http://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
@@ -157,6 +141,17 @@ class Target(Unit):
 		#The image will be a 16x16 circle 
 		self.image.set_colorkey(( 0, 0, 0 ))		  
 		pygame.draw.circle(self.image, ( 31, 196, 255 ), [8,8], 8)
+
+class PathCalculator(pygame.sprite.Sprite):
+	def __init__(self, pos, direction):
+		super(PathCalculator, self).__init__()
+		self.image = pygame.Surface(( 16, 16 ))
+
+		self.pos = pos
+		self.direction = direction
+	
+	def update(self):
+		pass
 
 #Initialize pygame
 pygame.init()

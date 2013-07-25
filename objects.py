@@ -63,7 +63,7 @@ class Line:
 			smallest_dist = float("inf")
 			for line in lines:
 				intersection_point = line.intersection_point( self )
-				dist = linalg.norm( intersection_point - self.pos )
+				dist = linalg.norm( intersection_point - pos )
 				if dist < smallest_dist:
 					smallest_dist = dist
 					closest_line = line
