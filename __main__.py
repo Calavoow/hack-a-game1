@@ -67,7 +67,7 @@ class Player(Unit):
 		super(Player, self).update()
 
 		# Collision with guard
-		collision_sprite = pygame.sprite.spritecollideany( self, block_list )
+		collision_sprite = pygame.sprite.spritecollideany( self, guard_list )
 		if collision_sprite:
 			print "Collided with guard"
 
