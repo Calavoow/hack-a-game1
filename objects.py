@@ -4,7 +4,7 @@ import pygame
 from numpy import *
 
 #Class representing a line segment
-class Line():
+class Line:
 	def __init__(self, p1, p2):
 		#The points between which the line segment runs
 		self.p1 = p1
@@ -25,13 +25,10 @@ class Line():
 		DB = self.p2 - other.p2
 		sideB = cross(CD, DB)
 		
-		if (sign(sideA) != sign(sideB)) and (sign(sideC) != sign(sideD)):
-			return True;
-		else:
-			return False;
+		return (sign(sideA) != sign(sideB)) and (sign(sideC) != sign(sideD))
 	
 	#Calculates the intersection point between two infinite lines
-	def intersectionPoint(self, other):
+	def intersection_point(self, other):
 		(a, b) = self.calcAB()
 		(c, d) = other.calcAB()
 		x = (d - b) / (a - c)
@@ -54,11 +51,11 @@ class Line():
 		#print "a and b are: (", a, ", ", b, ")"
 		return (a, b)
 	
-	def getNormal(self):
+	def get_normal(self):
 		v = self.p2 - self.p1
 		# Normal vector -> swap x and y, and multiply one of them by -1
 		normal = array([-v[1], v[0]])
-		return linalg.norm(normal)
+		return normal / linalg.norm(normal)
 		
 # 		
 # 		

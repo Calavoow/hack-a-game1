@@ -37,24 +37,58 @@ class Unit(pygame.sprite.Sprite):
 		# Collision box
 		self.rect = self.image.get_rect()
 		#Set position
-		self.rect.x = x
-		self.rect.y = y
+		self.x = x 
+		self.y = y 
 
 		self.movement = movement 
 	
+	@property
+	def x(self):
+		return self._x
+
+	@x.setter
+	def x(self, value):
+		self._x = value
+		self.rect.x = self._x
+
+	@property
+	def center_x( self ):
+		return self.x + self.rect.width/2
+
+	@property
+	def y(self):
+		return self._y
+
+	@y.setter
+	def y(self, value):
+		self._y = value
+		self.rect.y = self._y
+
+	@property
+	def center_y( self ):
+		return self.y + self.rect.width/2
+	
 	def update(self):
-		self.rect.x += self.movement[0]
-		self.rect.y += self.movement[1]
-		
-		# Collision with wall
-		collision_sprite = pygame.sprite.spritecollideany( self, block_list )
-		if collision_sprite:
-			print "collision"
+		# Collision with lines 
+		intersecting_line = self.intersects_line()
+		if intersecting_line:
 			#http://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
-			normal = collision_sprite.get_normal()
+			normal = intersecting_line.get_normal()
 			u = dot( self.movement, normal ) * normal 
 			w = self.movement - u
 			self.movement = w - u
+
+		self.x += self.movement[0]
+		self.y += self.movement[1]
+
+	def intersects_line( self ):
+		movement_line = objects.Line( array([self.center_x, self.center_y]),
+			array([self.center_x + self.movement[0],
+			self.center_y + self.movement[1]]) )
+		for line in lines_list:
+			if line.intersects( movement_line ):
+				return line
+		return None
 
 class Player(Unit):
 	def __init__(self, x, y, movement):
@@ -65,6 +99,7 @@ class Player(Unit):
 		pygame.draw.circle(self.image, (255,0,0), [8,8], 8)
 		pygame.draw.circle(self.image, (0,0,255), [8,8], 1)
 
+		self.bounce_angle = 0
 		self.bounce_angles = Queue()
 
 	def update(self):
@@ -86,7 +121,7 @@ class Player(Unit):
 		self.bounce_angle -= 1
 	
 	def confirm_bounce_angle( self ):
-		self.bounce_angles.push( self.bounce_angle )
+		self.bounce_angles.put( self.bounce_angle )
 
 class Guard(Unit):
 	def __init__(self, x, y, movement):
@@ -116,25 +151,14 @@ screen = pygame.display.set_mode([screen_width, screen_height])
 all_sprites_list = pygame.sprite.Group()
 block_list = pygame.sprite.Group()
 #Lets make a simple room
-objects.Line(array([201, 150]), array([200,400]))
-objects.Line(array([501, 150]), array([500,400]))
-objects.Line(array([201, 150]), array([501,150]))
-objects.Line(array([200, 400]), array([500,400]))
+lines_list = [objects.Line(array([201, 150]), array([200,400])),
+objects.Line(array([501, 150]), array([500,400])),
+objects.Line(array([201, 150]), array([501,150])),
+objects.Line(array([200, 400]), array([500,400]))]
 
-# for x in range(screen_width/2 - 10*16, screen_width/2 + 10*16, 16):
-# 	new_block = Block(x, screen_height/2 + 8*16)
-# 	block_list.add(new_block)
-# 	new_block = Block(x, screen_height/2 - 8*16)
-# 	block_list.add(new_block)
-# for y in range(screen_height/2 - 8*16, screen_height/2 + 9*16, 16):
-# 	new_block = Block(screen_width/2 - 10*16, y)
-# 	block_list.add(new_block)
-# 	new_block = Block(screen_width/2 + 10*16, y)
-# 	block_list.add(new_block)
-# all_sprites_list.add( block_list )
 #Add guards
 guard_list = pygame.sprite.Group()
-guard_list.add( Guard( 5*screen_width/8, screen_height/2, array([ 0, 1 ])))
+# guard_list.add( Guard( 5*screen_width/8, screen_height/2, array([ 0.25, 1 ])))
 
 all_sprites_list.add( guard_list )
 
@@ -176,10 +200,10 @@ while not done:
 	#Drawing
 	screen.fill((255,255,255))
 	all_sprites_list.draw(screen)
-	pygame.draw.line(screen, (0,0,0), [201, 150], [200, 400])
-	pygame.draw.line(screen, (0,0,0), [501, 150], [500, 400])
-	pygame.draw.line(screen, (0,0,0), [201, 150], [501, 150])
-	pygame.draw.line(screen, (0,0,0), [200, 400], [500, 400])
+	pygame.draw.aaline(screen, (0,0,0), [201, 150], [200, 400])
+	pygame.draw.aaline(screen, (0,0,0), [501, 150], [500, 400])
+	pygame.draw.aaline(screen, (0,0,0), [201, 150], [501, 150])
+	pygame.draw.aaline(screen, (0,0,0), [200, 400], [500, 400])
 
 	#FPS limited to 60
 	clock.tick(60)
