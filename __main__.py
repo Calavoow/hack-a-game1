@@ -81,7 +81,17 @@ class Unit(pygame.sprite.Sprite):
 		return self.pos + array([self.rect.width/2, self.rect.height/2])
 	
 	def update(self):
-		# Collision with lines 
+		new_movement = self.line_collision()
+		if new_movement is not None:
+			self.movement = new_movement
+
+		# Can't do +=
+		self.pos = self.pos + self.movement
+
+	def line_collision(self):
+		""" Check collision with lines.
+			returns: The new movement vector, if there was a collision. None else.
+		"""
 		movement_line = objects.Line( self.center_pos,
 			self.center_pos + self.movement)
 		intersecting_obstacle = movement_line.closest_intersecting_obstacle(self.pos, obstacles_list)
@@ -92,10 +102,9 @@ class Unit(pygame.sprite.Sprite):
 			normal = intersecting_line.get_normal()
 			u = dot( self.movement, normal ) * normal 
 			w = self.movement - u
-			self.movement = w - u
+			return w - u
 		
-		# Can't do +=
-		self.pos = self.pos + self.movement
+		return None 
 
 class Player(Unit):
 	def __init__(self, pos, movement):
@@ -120,23 +129,15 @@ class Player(Unit):
 		if collision_sprite:
 			print "Collided with target"
 
-		# Collisiion with lines
-		movement_line = objects.Line( self.center_pos,
-			self.center_pos + self.movement)
-		intersecting_obstacle = movement_line.closest_intersecting_obstacle(self.pos, obstacles_list)
-		intersecting_line = movement_line.closest_intersection_with_obstacle(self.pos, intersecting_obstacle)
-		if intersecting_line:
-			print "Intersects line at %s" % self.pos
-			#http://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
-			normal = intersecting_line.get_normal()
-			u = dot( self.movement, normal ) * normal 
-			w = self.movement - u
-			self.movement = w - u
+		new_movement = self.line_collision()
+		if new_movement is not None:
+			# Adjust the angle of the new_movement, according to bounce input.
 			if not self.bounce_angles.empty():
 				angle = self.bounce_angles.get()
 				rot_matrix = array([[math.cos(angle), math.sin(angle)],
 					[-math.sin(angle), math.cos(angle)]]) 
-				self.movement = dot( rot_matrix, self.movement )
+				new_movement = dot( rot_matrix, new_movement )
+			self.movement = new_movement
 
 		self.pos = self.pos + self.movement
 
@@ -170,15 +171,27 @@ class Target(Unit):
 		pygame.draw.circle(self.image, ( 31, 196, 255 ), [8,8], 8)
 
 class PathCalculator(pygame.sprite.Sprite):
-	def __init__(self, pos, direction):
-		super(PathCalculator, self).__init__()
-		self.image = pygame.Surface(( 16, 16 ))
-
-		self.pos = pos
-		self.direction = direction
+	def __init__(self, unit):
+		self.pos = unit.pos
+		self.direction = player.movement
+		self.angle = 0
+		
+		self.jump_to_line()
 	
 	def update(self):
 		pass
+
+	def jump_to_line(self):
+		direction_line = Line( self.pos, self.pos + 1e10 * self.movement )
+		closest_line = direction_line.closest_intersection( self.pos, line_list )
+		assert closest_line is not None, "PathCalculator couldn't find a line to jump to." #Truthy
+
+		# Set new position to intersection point.
+		intersecting_point = direction_line.intersection_point( closest_line ) 
+		self.pos = intersecting_point
+		
+		# Then figure out the outbound angle.
+
 
 #Initialize pygame
 pygame.init()
