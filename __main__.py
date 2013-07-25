@@ -2,6 +2,7 @@ import pygame
 import math
 
 from numpy import array, dot, linalg
+from Queue import Queue
 
 class Block(pygame.sprite.Sprite):
 	def __init__(self, x, y):
@@ -59,9 +60,11 @@ class Player(Unit):
 		super(Player, self).__init__(pygame.Surface((16, 16)), x, y, movement)
 
 		#The image will be a 16x16 circle 
-		self.image.set_colorkey(( 0, 0, 0))		  
+		self.image.set_colorkey(( 0, 0, 0 ))		  
 		pygame.draw.circle(self.image, (255,0,0), [8,8], 8)
 		pygame.draw.circle(self.image, (0,0,255), [8,8], 1)
+
+		self.bounce_angles = Queue()
 
 	def update(self):
 		super(Player, self).update()
@@ -71,13 +74,34 @@ class Player(Unit):
 		if collision_sprite:
 			print "Collided with guard"
 
+		collision_sprite = pygame.sprite.spritecollideany( self, target_list )
+		if collision_sprite:
+			print "Collided with target"
+	
+	def increase_bounce_angle( self ):
+		self.bounce_angle += 1
+	
+	def decrease_bounce_angle( self ):
+		self.bounce_angle -= 1
+	
+	def confirm_bounce_angle( self ):
+		self.bounce_angles.push( self.bounce_angle )
+
 class Guard(Unit):
 	def __init__(self, x, y, movement):
 		super(Guard, self).__init__(pygame.Surface((16, 16)), x, y, movement) 
 
 		#The image will be a 16x16 circle 
-		self.image.set_colorkey(( 0, 0, 0))		  
+		self.image.set_colorkey(( 0, 0, 0 ))		  
 		pygame.draw.circle(self.image, (255,255,0), [8,8], 8)
+
+class Target(Unit):
+	def __init__(self, x, y, movement):
+		super(Target, self).__init__(pygame.Surface((16, 16)), x, y, movement) 
+
+		#The image will be a 16x16 circle 
+		self.image.set_colorkey(( 0, 0, 0 ))		  
+		pygame.draw.circle(self.image, ( 31, 196, 255 ), [8,8], 8)
 
 #Initialize pygame
 pygame.init()
@@ -108,6 +132,12 @@ guard_list.add( Guard( 5*screen_width/8, screen_height/2, array([ 0, 1 ])))
 
 all_sprites_list.add( guard_list )
 
+# Add Target
+target_list = pygame.sprite.Group()
+target_list.add( Target( 3*screen_width/8, screen_height/2, array([ 0, 0 ])))
+
+all_sprites_list.add( target_list )
+
 #And set the player
 player = Player(screen_width/2, screen_height/2, array([2,1]))
 all_sprites_list.add(player)
@@ -123,9 +153,16 @@ while not done:
 	for event in pygame.event.get(): # User did something
 		if event.type == pygame.QUIT: # Exit button presed.
 			done=True # Flag that we are done so we exit this loop
-		if event.type == pygame.KEYDOWN:
+		elif event.type == pygame.KEYDOWN:
 			if event.key is pygame.K_ESCAPE: # If user clicked close
 				done=True # Flag that we are done so we exit this loop
+			elif event.key is pygame.K_LEFT:
+				player.decrease_bounce_angle()
+			elif event.key is pygame.K_RIGHT:
+				player.increase_bounce_angle()
+			elif event.key is pygame.SPACE:
+				player.confirm_bounce_angle()
+
 	
 	#Game logic
 	all_sprites_list.update()
