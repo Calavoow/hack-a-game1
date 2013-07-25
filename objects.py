@@ -51,6 +51,25 @@ class Line:
 		y = a * x + b
 		return array([x, y])		
 	
+	def closest_intersection(self, pos, other_lines):
+		"""Find the closest other intersecting line with self.
+		""" 
+		closest_line = None
+		for line in other_lines:
+			# Get all intersecting lines, with movement_line
+			lines = []
+			if line.intersects( self ):
+				lines.append( line )
+			smallest_dist = float("inf")
+			for line in lines:
+				intersection_point = line.intersection_point( self )
+				dist = linalg.norm( intersection_point - self.pos )
+				if dist < smallest_dist:
+					smallest_dist = dist
+					closest_line = line
+		
+		return closest_line 
+	
 	#Returns the a and b of the (y = ax + b) representation of this line
 	def calc_ab(self):
 		x1 = self.p1[0]
@@ -119,19 +138,4 @@ class Obstacle(pygame.sprite.Sprite):
 	def translated_lines(self):
 		def translate(line): return line.translate(array([self.rect.x, self.rect.y]))
 		return map(translate, self.lines)
-	
-#  l1 = Line(array([0.0, 0.0]),array([8.0, 1.0]))
-#  l2 = Line(array([4.0, -5.0]),array([5.0, 2.0]))	
-#  l3 = Line(array([2.0, 2.0]),array([4.0, 3.0]))	
-#  l4 = Line(array([6.0, 0.0]),array([6.0, 3.0]))	
-#  
-#  l5 = Line(array([0.0, 0.0]),array([2.0, 2.0]))	
-#  l6 = Line(array([0.0, 2.0]),array([2.0, 0.0]))
-
-# l7 = Line(array([0.0, 0.0]),array([4, 0]))
-# l8 = Line(array([2,-1]),array([2.0,5]))
-#print l1.intersection_point(l2)	
-#print l5.intersection_point(l6)	
-# print l7.intersects(l8)
-# print l7.intersection_point(l8)
 
