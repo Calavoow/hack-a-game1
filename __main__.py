@@ -25,25 +25,21 @@ class Block(pygame.sprite.Sprite):
 
 		return array([-1,0])
 
-class Player(pygame.sprite.Sprite):
-	def __init__(self, x, y):
-		#super(Player, self).__init__(self)
-		# Call the parent class (Sprite) constructor
-		pygame.sprite.Sprite.__init__(self) 
-		#The image will be a 16x16 circle 
-		self.image = pygame.Surface((16,16))
-		self.image.set_colorkey(( 0, 0, 0))		  
-		pygame.draw.circle(self.image, (255,0,0), [8,8], 8)
-		pygame.draw.circle(self.image, (0,0,255), [8,8], 1)
-		#Collision box
-		self.rect = self.image.get_rect()
+class Unit(pygame.sprite.Sprite):
+	def __init__(self, surface, x, y, movement):
+		super(Unit, self).__init__()	
 
+		# Set the surface
+		self.image = surface
+
+		# Collision box
+		self.rect = self.image.get_rect()
 		#Set position
 		self.rect.x = x
 		self.rect.y = y
 
-		self.movement = array([2, 1])
-
+		self.movement = movement 
+	
 	def update(self):
 		self.rect.x += self.movement[0]
 		self.rect.y += self.movement[1]
@@ -57,44 +53,31 @@ class Player(pygame.sprite.Sprite):
 			u = dot( self.movement, normal ) * normal 
 			w = self.movement - u
 			self.movement = w - u
+
+class Player(Unit):
+	def __init__(self, x, y, movement):
+		super(Player, self).__init__(pygame.Surface((16, 16)), x, y, movement)
+
+		#The image will be a 16x16 circle 
+		self.image.set_colorkey(( 0, 0, 0))		  
+		pygame.draw.circle(self.image, (255,0,0), [8,8], 8)
+		pygame.draw.circle(self.image, (0,0,255), [8,8], 1)
+
+	def update(self):
+		super(Player, self).update()
 
 		# Collision with guard
 		collision_sprite = pygame.sprite.spritecollideany( self, block_list )
 		if collision_sprite:
 			print "Collided with guard"
 
-class Guard(pygame.sprite.Sprite):
+class Guard(Unit):
 	def __init__(self, x, y, movement):
-		#super(Player, self).__init__(self)
-		# Call the parent class (Sprite) constructor
-		pygame.sprite.Sprite.__init__(self) 
+		super(Guard, self).__init__(pygame.Surface((16, 16)), x, y, movement) 
+
 		#The image will be a 16x16 circle 
-		self.image = pygame.Surface((16,16))
 		self.image.set_colorkey(( 0, 0, 0))		  
 		pygame.draw.circle(self.image, (255,255,0), [8,8], 8)
-		#Collision box
-		self.rect = self.image.get_rect()
-
-		#Set position
-		self.rect.x = x
-		self.rect.y = y
-
-		self.movement = movement 
-
-	def update(self):
-		self.rect.x += self.movement[0]
-		self.rect.y += self.movement[1]
-
-		# Collision with wall
-		collision_sprite = pygame.sprite.spritecollideany( self, block_list )
-		if collision_sprite:
-			print "collision"
-			#http://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
-			normal = collision_sprite.get_normal()
-			u = dot( self.movement, normal ) * normal 
-			w = self.movement - u
-			self.movement = w - u
-		
 
 #Initialize pygame
 pygame.init()
@@ -126,7 +109,7 @@ guard_list.add( Guard( 5*screen_width/8, screen_height/2, array([ 0, 1 ])))
 all_sprites_list.add( guard_list )
 
 #And set the player
-player = Player(screen_width/2, screen_height/2)
+player = Player(screen_width/2, screen_height/2, array([2,1]))
 all_sprites_list.add(player)
 
 
