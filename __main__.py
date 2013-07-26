@@ -2,7 +2,7 @@ import pygame
 import math
 import os
 import re
-#import tiles
+import tiles
 import time
 
 from numpy import array, dot, linalg
@@ -124,6 +124,7 @@ class Player(Unit):
 			self.pause = 0
 			self.frame = ( self.frame + 1 ) % len( self.images['front'] )
 			angle = math.atan2(self.movement[1], self.movement[0])
+
 			#Right side
 			if angle > -math.pi/4. and angle < math.pi/4.:
 				side = 'right'
@@ -378,54 +379,53 @@ Block(screen_width/2 + 80.0, screen_height/2 + 80.0)
 	all_sprites_list.add(block)
 	obstacles_list.append(block)
 """
-# polyframe1 = Polygon( array([0.0, 0.0]), array([1240.0, 900.0]), [
-# 	array([50.000000, 43.000000]),
-# 	array([386.000000, 46.000000]),
-# 	array([396.000000, 330.000000]),
-# 	array([253.000000, 336.000000]),
-# 	array([240.000000, 757.000000]),
-# 	array([405.000000, 750.000000]),
-# 	array([410.000000, 476.000000]),
-# 	array([799.000000, 461.000000]),
-# 	array([798.000000, 611.000000]),
-# 	array([943.000000, 618.000000]),
-# 	array([1007.000000, 469.000000]),
-# 	array([916.000000, 360.000000]),
-# 	array([990.000000, 226.000000]),
-# 	array([934.000000, 153.000000]),
-# 	array([725.000000, 145.000000]),
-# 	array([688.000000, 307.000000]),
-# 	array([756.000000, 304.000000]),
-# 	array([686.000000, 437.000000]),
-# 	array([456.000000, 439.000000]),
-# 	array([467.000000, 313.000000]),
-# 	array([597.000000, 306.000000]),
-# 	array([591.000000, 16.000000]),
-# 	array([929.000000, 19.000000]),
-# 	array([1031.000000, 22.000000]),
-# 	array([1133.000000, 228.000000]),
-# 	array([1083.000000, 364.000000]),
-# 	array([1173.000000, 476.000000]),
-# 	array([1120.000000, 641.000000]),
-# 	array([1132.000000, 803.000000]),
-# 	array([787.000000, 774.000000]),
-# 	array([667.000000, 772.000000]),
-# 	array([647.000000, 573.000000]),
-# 	array([535.000000, 579.000000]),
-# 	array([535.000000, 759.000000]),
-# 	array([523.000000, 878.000000]),
-# 	array([40.000000, 858.000000]),
-# 	array([46.000000, 336.000000])
-# ])
-# polyframe1.draw_lines((0, 0, 0))		
-# all_sprites_list.add(polyframe1)
-# obstacles_list = [polyframe1]
-obstacles_list = []
 
-#And set the player
-player = Player( array([119.000000, 120.000000]), array([ 2.0 , 2.0 ]))
-all_sprites_list.add(player)
+"""
+polyframe1 = Polygon( array([0.0, 0.0]), array([1240.0, 900.0]), [
+	array([50.000000, 43.000000]),
+	array([386.000000, 46.000000]),
+	array([396.000000, 330.000000]),
+	array([253.000000, 336.000000]),
+	array([240.000000, 757.000000]),
+	array([405.000000, 750.000000]),
+	array([410.000000, 476.000000]),
+	array([799.000000, 461.000000]),
+	array([798.000000, 611.000000]),
+	array([943.000000, 618.000000]),
+	array([1007.000000, 469.000000]),
+	array([916.000000, 360.000000]),
+	array([990.000000, 226.000000]),
+	array([934.000000, 153.000000]),
+	array([725.000000, 145.000000]),
+	array([688.000000, 307.000000]),
+	array([756.000000, 304.000000]),
+	array([686.000000, 437.000000]),
+	array([456.000000, 439.000000]),
+	array([467.000000, 313.000000]),
+	array([597.000000, 306.000000]),
+	array([591.000000, 16.000000]),
+	array([929.000000, 19.000000]),
+	array([1031.000000, 22.000000]),
+	array([1133.000000, 228.000000]),
+	array([1083.000000, 364.000000]),
+	array([1173.000000, 476.000000]),
+	array([1120.000000, 641.000000]),
+	array([1132.000000, 803.000000]),
+	array([787.000000, 774.000000]),
+	array([667.000000, 772.000000]),
+	array([647.000000, 573.000000]),
+	array([535.000000, 579.000000]),
+	array([535.000000, 759.000000]),
+	array([523.000000, 878.000000]),
+	array([40.000000, 858.000000]),
+	array([46.000000, 336.000000])
+])
+polyframe1.draw_lines((0, 0, 0))		
+all_sprites_list.add(polyframe1)
+obstacles_list = [polyframe1]
+"""
 
+"""
 #Add guards
 guard_list = pygame.sprite.Group()
 guard_list.add( Guard( array([83.000000, 430.000000]), array([ 0.5, 2.0 ])))
@@ -451,6 +451,7 @@ for element in [
 ]:
 	all_sprites_list.add(element)
 	obstacles_list.append(element)
+"""
 
 # Make a tile to start off with
 """
@@ -459,13 +460,24 @@ start_tile.add_sprites_to(all_sprites_list)
 start_tile.add_obstacles_to(obstacles_list)
 start_tile.pos = array([0.0, 0.0])
 """
+# Make another tile
+t1 = tiles.make_tile(1, None, all_sprites_list, obstacles_list)
+t1.place_at(array([0.0, 500.0]))
+t2 = tiles.make_tile(1, t1, all_sprites_list, obstacles_list)
+t3 = tiles.make_tile(1, t2, all_sprites_list, obstacles_list)
+t4 = tiles.make_tile(1, t3, all_sprites_list, obstacles_list)
+
+
+#And set the player
+player = Player( array([50.0, 450.0]), array([ 2.0 , 2.0 ]))
+all_sprites_list.add(player)
 
 #Keep track of clicked points, for levelbuilding purposes
 clicked = []
 clicked_sprites = []
 
 # Keep track of last added tile
-#last_tile = start_tile
+last_tile = t4
 
 # Keep track of time elapsed, for score
 start = time.clock()
@@ -474,7 +486,7 @@ start = time.clock()
 # Used to manage how fast the screen updates
 clock=pygame.time.Clock()
 done = False
-speed = 0.0
+speed = -0.5
 
 while not done:
 	#Event processing
@@ -514,7 +526,8 @@ while not done:
 					point.kill()
 	
 	#Game logic
-	all_sprites_list.update(speed) 
+	all_sprites_list.update(speed)
+	last_tile.update(speed)
 	
 	#Drawing
 	screen.fill((255,255,255))
