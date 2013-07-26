@@ -5,19 +5,34 @@ import objects
 from numpy import array, dot, linalg
 from Queue import Queue
 
+#Simple point to display on the map
+class Point(pygame.sprite.Sprite):
+	def __init__(self, x, y):
+		# Call the parent class (Sprite) constructor
+		pygame.sprite.Sprite.__init__(self)
+		#The image will be a 32x32 square
+		self.image = pygame.Surface((5,5))
+		pygame.draw.circle(self.image, (0, 0, 150), [2,2], 2)
+		#Collision box
+		self.rect = self.image.get_rect()
+		
+		#Set position
+		self.rect.x = x
+		self.rect.y = y
+
 class Block(objects.Obstacle):
 	def __init__(self, x, y):
-		#The lines surrounding this 16x16 block
+		#The lines surrounding this 32x32 block
 		lines = [
-			objects.Line(array([0.0, 0.0]), array([15.0, 0.0])),
-			objects.Line(array([15.0, 0.0]), array([15.0, 15.0])),
-			objects.Line(array([15.0, 15.0]), array([0.0, 15.0])),
-			objects.Line(array([0.0, 15.0]), array([0.0, 0.0]))
+			objects.Line(array([0.0, 32.0]), array([32.0, 0.0])),
+			objects.Line(array([32.0, 0.0]), array([32.0, 32.0])),
+			objects.Line(array([32.0, 32.0]), array([0.0, 32.0])),
+			objects.Line(array([0.0, 32.0]), array([0.0, 0.0]))
 		]
 		# Call the parent class (Obstacle) constructor
 		super(Block, self).__init__(lines)
-		#The image will be a 16x16 square
-		self.image = pygame.Surface((16,16))
+		#The image will be a 32x32 square
+		self.image = pygame.Surface((32,32))
 		self.image.fill((255,170,0))
 		#Let's draw lines on top of the image for debugging
 		self.draw_lines((80, 0, 0))
@@ -40,7 +55,7 @@ class SimpleRoom(objects.Obstacle):
 		# Call the parent class (Obstacle) constructor
 		super(SimpleRoom, self).__init__(lines)
 		#The image will be as big as the screen, and transparent
-		self.image = pygame.Surface((640,480))
+		self.image = pygame.Surface((1240,900))
 		self.image.fill((255, 255, 255))
 		self.image.set_colorkey((255,255,255))
 		#Let's draw lines on top of the image for debugging
@@ -99,12 +114,12 @@ class Unit(pygame.sprite.Sprite):
 
 class Player(Unit):
 	def __init__(self, pos, movement):
-		super(Player, self).__init__(pygame.Surface((16, 16)), pos, movement)
+		super(Player, self).__init__(pygame.Surface((32, 32)), pos, movement)
 
-		#The image will be a 16x16 circle 
+		#The image will be a 32x32 circle 
 		self.image.set_colorkey(( 0, 0, 0 ))		  
-		pygame.draw.circle(self.image, (255,0,0), [8,8], 8)
-		pygame.draw.circle(self.image, (0,0,255), [8,8], 1)
+		pygame.draw.circle(self.image, (255,0,0), [16,16], 16)
+		pygame.draw.circle(self.image, (0,0,255), [16,16], 1)
 
 		self.bounce_angle = 0.0
 		self.bounce_angles = Queue()
@@ -157,24 +172,24 @@ class Player(Unit):
 
 class Guard(Unit):
 	def __init__(self, pos, movement):
-		super(Guard, self).__init__(pygame.Surface((16, 16)), pos, movement) 
+		super(Guard, self).__init__(pygame.Surface((32, 32)), pos, movement) 
 
-		#The image will be a 16x16 circle 
+		#The image will be a 32x32 circle 
 		self.image.set_colorkey(( 0, 0, 0 ))		  
-		pygame.draw.circle(self.image, (255,255,0), [8,8], 8)
+		pygame.draw.circle(self.image, (255,255,0), [16,16], 16)
 
 class Target(Unit):
 	def __init__(self, pos, movement):
-		super(Target, self).__init__(pygame.Surface((16, 16)), pos, movement) 
+		super(Target, self).__init__(pygame.Surface((32, 32)), pos, movement) 
 
-		#The image will be a 16x16 circle 
+		#The image will be a 32x32 circle 
 		self.image.set_colorkey(( 0, 0, 0 ))		  
-		pygame.draw.circle(self.image, ( 31, 196, 255 ), [8,8], 8)
+		pygame.draw.circle(self.image, ( 31, 196, 255 ), [16,16], 16)
 
 class PathCalculator(pygame.sprite.Sprite):
 	def __init__(self, pos, direction):
 		super(PathCalculator, self).__init__()
-		self.image = pygame.Surface(( 16, 16 ))
+		self.image = pygame.Surface(( 32, 32 ))
 
 		self.pos = pos
 		self.direction = direction
@@ -186,8 +201,8 @@ class PathCalculator(pygame.sprite.Sprite):
 pygame.init()
 
 #Set the screen
-screen_width = 640
-screen_height = 480
+screen_width = 1240
+screen_height = 900
 screen = pygame.display.set_mode([screen_width, screen_height])
 
 #Make instances to place in the world
@@ -215,37 +230,68 @@ Block(screen_width/2 + 80.0, screen_height/2 + 80.0)
 	obstacles_list.append(block)
 """
 polyframe1 = objects.PolygonFrame([
-		array([150.0, 150.0]),
-		array([450.0, 150.0]),
-		array([550.0, 250.0]),
-		array([550.0, 350.0]),
-		array([130.0, 370.0])
-	])
-polyframe2 = objects.PolygonFrame([
-		array([220.0, 270.0]),
-		array([400.0, 270.0]),
-		array([400.0, 300.0]),
-		array([220.0, 300.0])
-	])
+array([50.000000, 43.000000]),
+array([386.000000, 46.000000]),
+array([396.000000, 330.000000]),
+array([253.000000, 333.000000]),
+array([240.000000, 757.000000]),
+array([405.000000, 750.000000]),
+array([410.000000, 476.000000]),
+array([799.000000, 461.000000]),
+array([798.000000, 611.000000]),
+array([943.000000, 618.000000]),
+array([1007.000000, 469.000000]),
+array([916.000000, 360.000000]),
+array([990.000000, 226.000000]),
+array([934.000000, 153.000000]),
+array([725.000000, 145.000000]),
+array([688.000000, 307.000000]),
+array([756.000000, 304.000000]),
+array([686.000000, 437.000000]),
+array([456.000000, 439.000000]),
+array([467.000000, 313.000000]),
+array([597.000000, 306.000000]),
+array([591.000000, 16.000000]),
+array([929.000000, 19.000000]),
+array([1031.000000, 22.000000]),
+array([1133.000000, 228.000000]),
+array([1083.000000, 364.000000]),
+array([1173.000000, 476.000000]),
+array([1120.000000, 641.000000]),
+array([1132.000000, 803.000000]),
+array([787.000000, 774.000000]),
+array([667.000000, 772.000000]),
+array([647.000000, 573.000000]),
+array([535.000000, 579.000000]),
+array([535.000000, 759.000000]),
+array([523.000000, 878.000000]),
+array([40.000000, 858.000000])
+])
+
 all_sprites_list.add(polyframe1)
-all_sprites_list.add(polyframe2)
-obstacles_list = [polyframe1, polyframe2]
+obstacles_list = [polyframe1]
 
 #Add guards
 guard_list = pygame.sprite.Group()
-guard_list.add( Guard( array([ 5*screen_width/8, screen_height/2 ]), array([ 0.25, 1.0 ])))
+guard_list.add( Guard( array([83.000000, 430.000000]), array([ 0.5, 2.0 ])))
+guard_list.add( Guard( array([461.000000, 817.000000]), array([ 0.5, 2.0 ])))
+guard_list.add( Guard( array([1069.000000, 480.000000]), array([ 0.5, 2.0 ])))
 
 all_sprites_list.add( guard_list )
 
 # Add Target
 target_list = pygame.sprite.Group()
-target_list.add( Target( array([ 3*screen_width/8, screen_height/2 ]), array([ 0.0, 0.0 ])))
+target_list.add( Target( array([575.000000, 375.000000]), array([ 0.0, 0.0 ])))
 
 all_sprites_list.add( target_list )
 
 #And set the player
-player = Player( array([ screen_width/2, screen_height/2 ]), array([ 1.0 , 1.0 ]))
+player = Player( array([119.000000, 120.000000]), array([ 2.0 , 2.0 ]))
 all_sprites_list.add(player)
+
+#Keep track of clicked points, for levelbuilding purposes
+clicked = []
+clicked_sprites = []
 
 
 # THE GAME LOOP
@@ -267,6 +313,28 @@ while not done:
 				player.increase_bounce_angle()
 			elif event.key == pygame.K_SPACE:
 				player.confirm_bounce_angle()
+		elif event.type == pygame.MOUSEBUTTONDOWN:
+			# Left mouse button remembers clicked points, for levelbuilding purposes
+			if event.button == 1:
+				point = Point(event.pos[0] - 3, event.pos[1] - 3)
+				clicked.append("array([%f, %f])," % (event.pos))
+				clicked_sprites.append(point)
+				all_sprites_list.add(point)
+			# Right mouse button prints the remembered points (so that no other prints can get inbetween)
+			elif event.button == 3:
+				print("REMEMBERED POINTS ----")
+				for point in clicked:
+					print point
+				print("END OF POINTS --------")
+			# Middle mouse button can be used to remove wrongly placed points
+			elif event.button == 2:
+				clicked.pop()
+				point = clicked_sprites.pop()
+				
+				if point != None:
+					point.kill()
+					
+				
 	
 	#Game logic
 	all_sprites_list.update()

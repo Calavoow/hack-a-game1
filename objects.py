@@ -195,7 +195,7 @@ The PolygonFrame class represents an obstacle that consists of a simple closed p
 	without an image.
 """
 class PolygonFrame(Obstacle):
-	def __init__(self, points, size = [640, 480]):
+	def __init__(self, points, size = [1240, 900]):
 		# The lines should connect the points
 		lines = []
 		if len( points ) > 1:
