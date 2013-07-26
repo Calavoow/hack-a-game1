@@ -228,7 +228,7 @@ class PathCalculator():
 			self.unit.center_pos, intersecting_obstacle)
 		return intersecting_line is not None
 	
-	def sync_position( self ):
+	def sync_position( self, surface=None ):
 		""" Sync the position of the PathCalculator with the self.unit.
 			This repairs the drift in float calculation.
 		"""
@@ -246,16 +246,29 @@ class PathCalculator():
 			direction = self.direction_queue.get()
 			new_direction_queue.put( direction )
 
+			old_pos = self.pos
 			# Jump to a line
 			self.calc_next()
+			# Draw a line if a surface is given.
+			if surface:
+				pygame.draw.aaline( surface, (255,0,255),
+					[old_pos[0], old_pos[1]],
+					[self.pos[0], self.pos[1]])
 			# And set the direction as stored in the Queue.
 			self.direction = direction
+
 		self.direction_queue = new_direction_queue
 
 		# Do the last jump to the latest position.
+		old_pos = self.pos
 		self.calc_next()
 		self.direction = previous_direction
 		self.angle = previous_angle
+		# Draw the last line.
+		if surface:
+			pygame.draw.aaline( surface, (255,0,255),
+				[old_pos[0], old_pos[1]],
+				[self.pos[0], self.pos[1]])
 	
 	def increase_angle( self ):
 		if self.angle + 10 <= self.MAX_ANGLE:
@@ -281,7 +294,7 @@ class PathCalculator():
 		self.direction = dot( rot_matrix, self.direction )
 
 	def draw(self, surface):
-		self.sync_position()
+		self.sync_position( surface = surface )
 
 		# Draw the the outbound direction.
 		point2 = 20 * self.direction + self.pos
