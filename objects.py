@@ -147,12 +147,16 @@ class Line:
 
 # A superclass for everything that can be bounced against
 class Obstacle(pygame.sprite.Sprite):
-	def __init__(self, lines):
+	def __init__(self, pos, size, lines):
 		# Call the parent class (Sprite) constructor
 		pygame.sprite.Sprite.__init__(self)
-		#Subclasses should provide the rect and the image
-		
-		self.lines = lines
+		self.rect = pygame.Rect(pos[0], pos[1], size[0], size[1])
+		self.image = pygame.Surface((size[0], size[1]))
+		self.image.fill((255,255,255))
+		self.image.set_colorkey((255,255,255))
+		self.pos = pos
+		self.size = size
+		self.lines = lines			
 
 	@property
 	def pos(self):
@@ -166,7 +170,7 @@ class Obstacle(pygame.sprite.Sprite):
 
 	@property
 	def center_pos( self ):
-		return self.pos + array([self.collision_point[0], self.collision_point[1]])
+		return self.pos + (0.5 * self.size)
 	
 	# Called when a line of the obstacle is touched by a unit
 	def touched(self, line, unit):
@@ -192,20 +196,13 @@ The Polygon class represents an obstacle that consists of a simple closed polygo
 	forming a closed polygon.
 """
 class Polygon(Obstacle):
-	def __init__(self, points):
+	def __init__(self, pos, size, points):
 		# The lines should connect the points
 		lines = []
 		if len( points ) == 2:
 			#The special case of a line
 			lines.append(Line(points[0], points[1]))
 		elif len( points ) > 1:
-			# Meanwhile keep track of the bounds of the figure
-			#### --- this could be implemented in the future
-# 			left = float("inf")
-# 			right = -float("inf")
-# 			top = -float("inf")
-# 			bottom = float("inf")
-			
 			lastpoint = points[len(points) - 1]
 			for point in points:
 				line = Line(lastpoint, point)
@@ -213,35 +210,81 @@ class Polygon(Obstacle):
 				lastpoint = point
 
 		# Call the parent class (Obstacle) constructor
-		super(Polygon, self).__init__(lines)
+		super(Polygon, self).__init__(pos, size, lines)
 
 """
-The PolygonFrame class represents an obstacle that consists of a simple closed polygon of lines,
-	without NO IMAGE. Only the lines are visible.
+The Polygon class represents an obstacle that consists of a path of connected lines.
 """
-class PolygonFrame(Polygon):
-	def __init__(self, points, size = [1240, 900]):
-		# Call the parent class (Polygon) constructor
-		super(PolygonFrame, self).__init__(points)
-		#The image will be completely transparent
-		self.image = pygame.Surface(size)
-		self.image.fill((255,255,255))
-		self.image.set_colorkey((255,255,255))
-		#Let's draw lines on top of the image for debugging
-		self.draw_lines((0, 0, 0))
-		#Collision box
-		self.rect = self.image.get_rect()
+class Path(Obstacle):
+	def __init__(self, pos, size, points):
+		# The lines should connect the points
+		lines = []
+		if len( points ) > 1:
+			lastpoint = points[0]
+			first = True
+			for point in points:
+				if first:
+					first = False
+				else:
+					line = Line(lastpoint, point)
+					lines.append(line)
+					lastpoint = point
+
+		# Call the parent class (Obstacle) constructor
+		super(Polygon, self).__init__(pos, size, lines)
 		
-		#Set position to (0, 0)
-		self.pos = array([0, 0,])
+# A square button that can activate an object when touched
+class Button(Polygon):
+	def __init__(self, x, y, callback):
+		size = 32.0
+		#The corner points of the button
+		points = [
+			array([0.0, 0.0]),
+			array([size, 0.0]),
+			array([size, size]),
+			array([0.0, size])
+		]
+		super(Button, self).__init__(array([x, y]), array([size, size]), points)
+		
+		#The image will be a placeholder square button
+		self.image.fill((170, 170, 170))
+		pygame.draw.rect(self.image, (255, 0, 0), [size/5, size/3, 3*size/5, 1*size/3])
+		
+		#This function is called then the button is touched
+		self.callback = callback
+	
+	# Override the touched method to see when the button is pressed by player
+	def touched(self, line, unit):
+		print "TOUCED THE BUTTON"
+		self.callback(unit)
+			
+# A door that is effectively a line between two points
+class Door(Polygon):
+	def __init__(self, p1, p2):
+		#Take some extra rect space
+		self.bound = 3
+		# Do some calculations to get everything in the right place
+		self.width = math.fabs(p1[0] - p2[0]) + 2*self.bound
+		self.height = math.fabs(p1[1] - p2[1]) + 2*self.bound
+		top = min([p1[1], p2[1]]) - self.bound
+		left = min([p1[0], p2[0]]) - self.bound
+		
+		#The corner points of the door
+		points = [array([self.bound, self.bound])
+				, array([self.width - self.bound, self.height - self.bound])]
+		super(Door, self).__init__(array([left, top]), array([self.width, self.height]), points)
 
-# l1 = Line(array([0.0, 0.0]), array([3.0, 3.0]))
-# l2 = Line(array([1.0, -1.0]), array([1.0, 2.0]))
-# l2c = Line(array([1.0, -1.0]), array([1.0, 2.0]))
-# 
-# obs = Obstacle([l2])
-# obs.rect = pygame.Rect([0,0,1,1])
-# 
-# 
-# print "closest_intersection : ", l1.closest_intersecting_obstacle(array([0.0, 0.0]), [obs])
+		#The image will be a placeholder line
+		self.image.fill((255, 255, 255))
+		self.image.set_colorkey((255, 255, 255))
+		pygame.draw.line(self.image, (180, 0, 0), [self.bound, self.bound], [self.width - self.bound, self.height - self.bound], 5)
+	
+	# Opens the door, allowing passage through
+	def open(self):
+		print "DOOR HAS BEEN OPENED"
+		# Remove collision line
+		self.lines = []
+		# Change graphics
+		self.image.fill((255, 255, 255))
+		pygame.draw.line(self.image, (0, 180, 0), [self.bound, self.bound], [self.width - self.bound, self.height - self.bound], 5)
 

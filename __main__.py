@@ -1,11 +1,12 @@
 import pygame
 import math
-import objects
 import os
 import re
+import tiles
 
 from numpy import array, dot, linalg
 from Queue import Queue
+from objects import *
 
 #Simple point to display on the map
 class Point(pygame.sprite.Sprite):
@@ -21,124 +22,6 @@ class Point(pygame.sprite.Sprite):
 		#Set position
 		self.rect.x = x
 		self.rect.y = y
-
-class Block(objects.Obstacle):
-	def __init__(self, x, y):
-		#The lines surrounding this 32x32 block
-		lines = [
-			objects.Line(array([0.0, 32.0]), array([32.0, 0.0])),
-			objects.Line(array([32.0, 0.0]), array([32.0, 32.0])),
-			objects.Line(array([32.0, 32.0]), array([0.0, 32.0])),
-			objects.Line(array([0.0, 32.0]), array([0.0, 0.0]))
-		]
-		# Call the parent class (Obstacle) constructor
-		super(Block, self).__init__(lines)
-		#The image will be a 32x32 square
-		self.image = pygame.Surface((32,32))
-		self.image.fill((255,170,0))
-		#Let's draw lines on top of the image for debugging
-		self.draw_lines((80, 0, 0))
-		#Collision box
-		self.rect = self.image.get_rect()
-		
-		#Set position
-		self.rect.x = x
-		self.rect.y = y
-
-class SimpleRoom(objects.Obstacle):
-	def __init__(self):
-		#The lines of which this room consists
-		lines = [
-			objects.Line(array([201.0,150.0]), array([200.0,400.0])),
-			objects.Line(array([501.0, 150.0]), array([500.0,400.0])),
-			objects.Line(array([201.0, 150.0]), array([501.0,150.0])),
-			objects.Line(array([200.0, 400.0]), array([500.0,400.0]))
-		]
-		# Call the parent class (Obstacle) constructor
-		super(SimpleRoom, self).__init__(lines)
-		#The image will be as big as the screen, and transparent
-		self.image = pygame.Surface((1240,900))
-		self.image.fill((255, 255, 255))
-		self.image.set_colorkey((255,255,255))
-		#Let's draw lines on top of the image for debugging
-		self.draw_lines((0,0,0))
-		#Collision box
-		self.rect = self.image.get_rect()
-		
-		#Set position
-		self.rect.x = 0
-		self.rect.y = 0
-
-# A square button that can activate an object when touched
-class Button(objects.Polygon):
-	def __init__(self, x, y, callback):
-		size = 32
-		#The corner points of the button
-		points = [
-			array([0.0, 0.0]),
-			array([size, 0.0]),
-			array([size, size]),
-			array([0.0, size])
-		]
-		super(Button, self).__init__(points)
-		
-		#The image will be a placeholder square button
-		self.image = pygame.Surface((size, size))
-		self.image.fill((170, 170, 170))
-		pygame.draw.rect(self.image, (255, 0, 0), [size/5, size/3, 3*size/5, 1*size/3])
-		#Let's draw lines on top of the image for debugging
-		#self.draw_lines((0,0,0))
-		#Collision box
-		self.rect = self.image.get_rect()			
-		#Set position
-		self.pos = array([x, y])
-		
-		#This function is called then the button is touched
-		self.callback = callback
-	
-	# Override the touched method to see when the button is pressed by player
-	def touched(self, line, unit):
-		if (unit == player):
-			print "PLAYER TOUCHED ", self
-			self.callback(unit)
-			
-# A door that is effectively a line between two points
-class Door(objects.Polygon):
-	def __init__(self, p1, p2):
-		#Take some extra rect space
-		self.bound = 3
-		# Do some calculations to get everything in the right place
-		self.width = math.fabs(p1[0] - p2[0]) + 2*self.bound
-		self.height = math.fabs(p1[1] - p2[1]) + 2*self.bound
-		top = min([p1[1], p2[1]]) - self.bound
-		left = min([p1[0], p2[0]]) - self.bound
-		
-		#The corner points of the door
-		points = [array([self.bound, self.bound])
-				, array([self.width - self.bound, self.height - self.bound])]
-		super(Door, self).__init__(points)
-
-		#The image will be a placeholder line
-		self.image = pygame.Surface((self.width, self.height))
-		self.image.fill((255, 255, 255))
-		self.image.set_colorkey((255, 255, 255))
-		pygame.draw.line(self.image, (180, 0, 0), [self.bound, self.bound], [self.width - self.bound, self.height - self.bound], 5)
-
-		#Collision box
-		self.rect = self.image.get_rect()			
-		#Set position to the top left point of a box enclosing the line
-		self.pos = array([ left, top ])
-	
-	# Opens the door, allowing passage through
-	def open(self):
-		print "DOOR HAS BEEN OPENED"
-		# Remove collision line
-		self.lines = []
-		# Change graphics
-		self.image.fill((255, 255, 255))
-		pygame.draw.line(self.image, (0, 180, 0), [self.bound, self.bound], [self.width - self.bound, self.height - self.bound], 5)
-		
-
 
 class Unit(pygame.sprite.Sprite):
 	def __init__(self, surface, pos, movement):
@@ -334,7 +217,7 @@ class PathCalculator():
 		"""
 		# Only when self.direction is not the null-vector.
 		if not linalg.norm( self.direction ) == 0.0:
-			direction_line = objects.Line( self.pos, self.pos + 1e10 * self.direction )
+			direction_line = Line( self.pos, self.pos + 1e10 * self.direction )
 			intersecting_obstacle = direction_line.closest_intersecting_obstacle(
 				self.pos, obstacles_list, ignore_lines=self.ignore_lines)
 			intersecting_line = direction_line.closest_intersection_with_obstacle(
@@ -355,7 +238,7 @@ class PathCalculator():
 		self.angle = 0
 	
 	def is_collided( self ):
-		movement_line = objects.Line( self.unit.center_pos,
+		movement_line = Line( self.unit.center_pos,
 			self.unit.center_pos + self.unit.movement)
 		intersecting_obstacle = movement_line.closest_intersecting_obstacle(
 			self.unit.center_pos, obstacles_list)
@@ -365,7 +248,7 @@ class PathCalculator():
 	
 	# Can be called after is_collided to get collided obstacle and line
 	def get_collision( self ):
-		movement_line = objects.Line( self.unit.center_pos,
+		movement_line = Line( self.unit.center_pos,
 			self.unit.center_pos + self.unit.movement)
 		intersecting_obstacle = movement_line.closest_intersecting_obstacle(
 			self.unit.center_pos, obstacles_list)
@@ -469,7 +352,11 @@ screen = pygame.display.set_mode([screen_width, screen_height])
 
 #Make instances to place in the world
 all_sprites_list = pygame.sprite.Group()
-block_list = pygame.sprite.Group()
+obstacles_list = []
+guard_list = pygame.sprite.Group()
+target_list = pygame.sprite.Group()
+
+#block_list = pygame.sprite.Group()
 
 #Lets make a simple room
 """
@@ -491,52 +378,56 @@ Block(screen_width/2 + 80.0, screen_height/2 + 80.0)
 	all_sprites_list.add(block)
 	obstacles_list.append(block)
 """
-polyframe1 = objects.PolygonFrame([
-array([50.000000, 43.000000]),
-array([386.000000, 46.000000]),
-array([396.000000, 330.000000]),
-array([253.000000, 336.000000]),
-array([240.000000, 757.000000]),
-array([405.000000, 750.000000]),
-array([410.000000, 476.000000]),
-array([799.000000, 461.000000]),
-array([798.000000, 611.000000]),
-array([943.000000, 618.000000]),
-array([1007.000000, 469.000000]),
-array([916.000000, 360.000000]),
-array([990.000000, 226.000000]),
-array([934.000000, 153.000000]),
-array([725.000000, 145.000000]),
-array([688.000000, 307.000000]),
-array([756.000000, 304.000000]),
-array([686.000000, 437.000000]),
-array([456.000000, 439.000000]),
-array([467.000000, 313.000000]),
-array([597.000000, 306.000000]),
-array([591.000000, 16.000000]),
-array([929.000000, 19.000000]),
-array([1031.000000, 22.000000]),
-array([1133.000000, 228.000000]),
-array([1083.000000, 364.000000]),
-array([1173.000000, 476.000000]),
-array([1120.000000, 641.000000]),
-array([1132.000000, 803.000000]),
-array([787.000000, 774.000000]),
-array([667.000000, 772.000000]),
-array([647.000000, 573.000000]),
-array([535.000000, 579.000000]),
-array([535.000000, 759.000000]),
-array([523.000000, 878.000000]),
-array([40.000000, 858.000000]),
-array([46.000000, 336.000000])
+polyframe1 = Polygon( array([0.0, 0.0]), array([1240.0, 900.0]), [
+	array([50.000000, 43.000000]),
+	array([386.000000, 46.000000]),
+	array([396.000000, 330.000000]),
+	array([253.000000, 336.000000]),
+	array([240.000000, 757.000000]),
+	array([405.000000, 750.000000]),
+	array([410.000000, 476.000000]),
+	array([799.000000, 461.000000]),
+	array([798.000000, 611.000000]),
+	array([943.000000, 618.000000]),
+	array([1007.000000, 469.000000]),
+	array([916.000000, 360.000000]),
+	array([990.000000, 226.000000]),
+	array([934.000000, 153.000000]),
+	array([725.000000, 145.000000]),
+	array([688.000000, 307.000000]),
+	array([756.000000, 304.000000]),
+	array([686.000000, 437.000000]),
+	array([456.000000, 439.000000]),
+	array([467.000000, 313.000000]),
+	array([597.000000, 306.000000]),
+	array([591.000000, 16.000000]),
+	array([929.000000, 19.000000]),
+	array([1031.000000, 22.000000]),
+	array([1133.000000, 228.000000]),
+	array([1083.000000, 364.000000]),
+	array([1173.000000, 476.000000]),
+	array([1120.000000, 641.000000]),
+	array([1132.000000, 803.000000]),
+	array([787.000000, 774.000000]),
+	array([667.000000, 772.000000]),
+	array([647.000000, 573.000000]),
+	array([535.000000, 579.000000]),
+	array([535.000000, 759.000000]),
+	array([523.000000, 878.000000]),
+	array([40.000000, 858.000000]),
+	array([46.000000, 336.000000])
 ])
-
+polyframe1.draw_lines((0, 0, 0))		
 all_sprites_list.add(polyframe1)
 obstacles_list = [polyframe1]
 
+#And set the player
+player = Player( array([119.000000, 120.000000]), array([ 2.0 , 2.0 ]))
+all_sprites_list.add(player)
+
 #Add guards
 guard_list = pygame.sprite.Group()
-# guard_list.add( Guard( array([83.000000, 430.000000]), array([ 0.5, 2.0 ])))
+guard_list.add( Guard( array([83.000000, 430.000000]), array([ 0.5, 2.0 ])))
 # guard_list.add( Guard( array([461.000000, 817.000000]), array([ 0.5, 2.0 ])))
 # guard_list.add( Guard( array([1069.000000, 480.000000]), array([ 0.5, 2.0 ])))
 
@@ -550,29 +441,36 @@ all_sprites_list.add( target_list )
 
 # Add interactive elements
 door1 = Door( array([253.000000, 336.000000]), array([46.000000, 336.000000]))
+def trigger_door(unit):
+	if unit == player:
+		door1.open()
 for element in [
 	door1,
-	Button(242.000000, 125.000000, lambda unit: door1.open())
+	Button(242.000000, 125.000000, trigger_door)
 ]:
 	all_sprites_list.add(element)
 	obstacles_list.append(element)
 
-#And set the player
-player = Player( array([119.000000, 120.000000]), array([ 2.0 , 2.0 ]))
-
-all_sprites_list.add(player)
+# Make a tile to start off with
+"""
+start_tile = tiles.get_tile(0)
+start_tile.add_sprites_to(all_sprites_list)
+start_tile.add_obstacles_to(obstacles_list)
+start_tile.pos = array([0.0, 0.0])
+"""
 
 #Keep track of clicked points, for levelbuilding purposes
 clicked = []
 clicked_sprites = []
 
-all_sprites_list.add(Point(185.27589661,  336.0))
+# Keep track of last added tile
+#last_tile = start_tile
 
 # THE GAME LOOP
 # Used to manage how fast the screen updates
 clock=pygame.time.Clock()
 done = False
-speed = -0.5
+speed = 0.0
 
 while not done:
 	#Event processing
