@@ -190,6 +190,45 @@ class Obstacle(pygame.sprite.Sprite):
 		return map(translate, self.lines)
 	
 
+"""
+The PolygonFrame class represents an obstacle that consists of a simple closed polygon of lines,
+	without an image.
+"""
+class PolygonFrame(Obstacle):
+	def __init__(self, points, size = [640, 480]):
+		# The lines should connect the points
+		lines = []
+		if len( points ) > 1:
+			# Meanwhile keep track of the bounds of the figure
+			#### --- this could be implemented in the future
+# 			left = float("inf")
+# 			right = -float("inf")
+# 			top = -float("inf")
+# 			bottom = float("inf")
+			
+			lastpoint = points[len(points) - 1]
+			for point in points:
+				line = Line(lastpoint, point)
+				lines.append(line)
+				lastpoint = point
+
+		# Call the parent class (Obstacle) constructor
+		super(PolygonFrame, self).__init__(lines)
+		#The image will be completely transparent
+		self.image = pygame.Surface(size)
+		self.image.fill((255,255,255))
+		self.image.set_colorkey((255,255,255))
+		#Let's draw lines on top of the image for debugging
+		self.draw_lines((0, 0, 0))
+		#Collision box
+		self.rect = self.image.get_rect()
+		
+		#Set position to (0, 0)
+		self.rect.x = 0
+		self.rect.y = 0
+
+
+
 # l1 = Line(array([0.0, 0.0]), array([3.0, 3.0]))
 # l2 = Line(array([1.0, -1.0]), array([1.0, 2.0]))
 # l2c = Line(array([1.0, -1.0]), array([1.0, 2.0]))

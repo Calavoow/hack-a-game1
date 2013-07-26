@@ -195,10 +195,12 @@ all_sprites_list = pygame.sprite.Group()
 block_list = pygame.sprite.Group()
 
 #Lets make a simple room
+"""
 room = SimpleRoom()
 all_sprites_list.add(room)
 obstacles_list = [room]
 # Experiment: let's add some blocks too!
+
 for block in [
 Block(300, 250),
 Block(300, 300),
@@ -211,6 +213,23 @@ Block(screen_width/2 + 80.0, screen_height/2 + 80.0)
 ]:
 	all_sprites_list.add(block)
 	obstacles_list.append(block)
+"""
+polyframe1 = objects.PolygonFrame([
+		array([150.0, 150.0]),
+		array([450.0, 150.0]),
+		array([550.0, 250.0]),
+		array([550.0, 350.0]),
+		array([130.0, 370.0])
+	])
+polyframe2 = objects.PolygonFrame([
+		array([220.0, 270.0]),
+		array([400.0, 270.0]),
+		array([400.0, 300.0]),
+		array([220.0, 300.0])
+	])
+all_sprites_list.add(polyframe1)
+all_sprites_list.add(polyframe2)
+obstacles_list = [polyframe1, polyframe2]
 
 #Add guards
 guard_list = pygame.sprite.Group()
