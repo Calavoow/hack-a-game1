@@ -6,7 +6,7 @@ import tiles
 
 from numpy import array, dot, linalg
 from Queue import Queue
-from objects import *
+from obstacles import *
 
 #Simple point to display on the map
 class Point(pygame.sprite.Sprite):
