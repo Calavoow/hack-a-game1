@@ -384,8 +384,9 @@ obstacles_list.append(barrier)
 all_sprites_list.add(barrier)
 
 # Make starting tile
-t1 = tiles.make_tile(0, None, all_sprites_list, obstacles_list)
-t1.place_at(array([0.0, 400.0]))
+# and keep track of last added tile
+last_tile = tiles.make_start_tile(array([0.0, 400.0]), all_sprites_list, obstacles_list)
+#last_tile = tiles.make_tile(3, last_tile, all_sprites_list, obstacles_list)
 
 #And set the player
 player = Player( array([50.0, 400.0]), array([ 2.0 , 2.0 ]))
@@ -394,9 +395,6 @@ all_sprites_list.add(player)
 #Keep track of clicked points, for levelbuilding purposes
 clicked = []
 clicked_sprites = []
-
-# Keep track of last added tile
-last_tile = t1
 
 # Keep track of time elapsed, for score
 start = time.clock()
