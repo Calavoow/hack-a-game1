@@ -305,12 +305,45 @@ class PathCalculator():
 	def increase_angle( self ):
 		if self.angle + 10 <= self.MAX_ANGLE:
 			self.angle += 10
-			self.rotate_direction( 10.0/360.0 * 2.0 * math.pi )
+			# self.rotate_direction( 10.0/360.0 * 2.0 * math.pi )
 
 	def decrease_angle( self ):
 		if self.angle - 10 >= self.MIN_ANGLE:
 			self.angle -= 10
-			self.rotate_direction( -10.0/360 * 2 * math.pi )
+			#@ self.rotate_direction( -10.0/360 * 2 * math.pi )
+	
+	def right_pressed( self ):
+		# The angle as compared to the left direction ([1, 0])
+		angle = math.atan2( self.direction[1], self.direction[0] )
+		if angle >= 0:
+			rotation = min( angle, math.pi/16 )
+		else:
+			rotation = max( angle, -math.pi/16 )
+		self.rotate_direction( rotation )
+	
+	def left_pressed( self ):
+		angle = math.atan2( self.direction[1], self.direction[0] )
+		if angle >= 0:
+			rotation = max( -angle, -math.pi/16 )
+		else:
+			rotation = min( -angle, math.pi/16 )
+		self.rotate_direction( rotation )
+	
+	def up_pressed( self ):
+		angle = math.atan2( self.direction[0], self.direction[1] )
+		if angle >= 0:
+			rotation = min( angle, math.pi/16 )
+		else:
+			rotation = max( angle, -math.pi/16 )
+		self.rotate_direction( rotation )
+	
+	def down_pressed( self ):
+		angle = math.atan2( self.direction[0], self.direction[1] )
+		if angle >= 0:
+			rotation = max( -angle, -math.pi/16 )
+		else:
+			rotation = min( -angle, math.pi/16 )
+		self.rotate_direction( rotation )
 	
 	def confirm_angle( self ):
 		if not self.direction_queue.full():
@@ -494,9 +527,13 @@ while not done:
 			if event.key == pygame.K_ESCAPE: # If user clicked close
 				done=True # Flag that we are done so we exit this loop
 			elif event.key == pygame.K_RIGHT:
-				player.path_calc.decrease_angle()
+				player.path_calc.right_pressed()
 			elif event.key == pygame.K_LEFT:
-				player.path_calc.increase_angle()
+				player.path_calc.left_pressed()
+			elif event.key == pygame.K_DOWN:
+				player.path_calc.down_pressed()
+			elif event.key == pygame.K_UP:
+				player.path_calc.up_pressed()
 			elif event.key == pygame.K_SPACE:
 				player.path_calc.confirm_angle()
 		elif event.type == pygame.MOUSEBUTTONDOWN:
