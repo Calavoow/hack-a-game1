@@ -100,7 +100,11 @@ class Unit(pygame.sprite.Sprite):
 	def center_pos( self ):
 		return self.pos + array([self.collision_point[0], self.collision_point[1]])
 	
-	def update(self):
+	def update(self, x_offset):
+		# First update position according to x_offset.
+		self.path_calc.update( x_offset )
+		self.pos = self.pos + array([x_offset, 0.0])
+
 		if self.path_calc.is_collided():
 			new_direction = self.path_calc.next()
 			# Magnitude * normalized direction
@@ -136,7 +140,7 @@ class Player(Unit):
 		self.delay = 6
 		self.pause = 0
 
-	def update(self):
+	def update(self, x_offset):
 		# Collision with guard
 		collision_sprite = pygame.sprite.spritecollideany( self, guard_list )
 		if collision_sprite:
@@ -149,14 +153,7 @@ class Player(Unit):
 			testtesttest=5
 			#print "Collided with target"
 
-
-		if self.path_calc.is_collided():
-			print "Collision with line."
-			new_direction = self.path_calc.next()
-			# Magnitude * normalized direction
-			self.movement = linalg.norm(self.movement) * new_direction
-
-		self.pos = self.pos + self.movement
+		super(Player, self).update( x_offset )
 
 		# Animate the sprite
 		self.pause += 1
@@ -164,30 +161,34 @@ class Player(Unit):
 			self.pause = 0
 			self.frame = ( self.frame + 1 ) % len( self.images['front'] )
 			angle = math.atan2(self.movement[1], self.movement[0])
+			print self, angle
 			#Right side
-			if angle > -math.pi/4 and angle < math.pi/4:
+			if angle > -math.pi/4. and angle < math.pi/4.:
 				side = 'right'
 			#Front side
-			elif angle > math.pi/4 and angle < 3*math.pi/4:
+			elif angle >= math.pi/4. and angle <= 3.*math.pi/4.:
 				side = 'front'
 			#Back side
-			elif angle > -3*math.pi/4 and angle < -math.pi/4:
+			elif angle >= -3.*math.pi/4. and angle <= -math.pi/4.:
 				side = 'back'
 			else:
 				side = 'left'
 
 			self.image = self.images[side][self.frame]
 		
-	
 	def loadImages(self):
 		images = { 'front': [0]*4, 'back': [0]*4, 'left': [0]*4, 'right': [0]*4 }
 		image_directory = os.path.join('images','spy')
+		
+		#Regexes to extract the right strings.
 		image_name_regex = re.compile(r"_[^\W\d_]+(\d)+")
 		key_regex = re.compile(r"[^\W\d_]+")
 		number_regex = re.compile(r"(\d)+")
 		for image in os.listdir(image_directory):
 			result = image_name_regex.search(image).group(0)
+			# The key in the dictionary, the direction.
 			key = key_regex.search( result ).group(0)
+			# And the number of the animation frame.
 			number = number_regex.search( result ).group(0)
 			images[key][int(number)] = pygame.image.load(
 				os.path.join(image_directory, image ))
@@ -228,6 +229,9 @@ class PathCalculator():
 		self.ignore_lines = [] 
 		self.direction_queue = Queue(maxsize=self.MAX_DIRECTIONS)
 		self.calc_next()
+	
+	def update( self, x_offset ):
+		self.pos = self.pos + array([x_offset, 0])
 	
 	def next(self):
 		# Sync position so that drift is prevented.
@@ -342,7 +346,6 @@ class PathCalculator():
 	def rotate_direction( self, angle ):
 		rot_matrix = array([[math.cos(angle), math.sin(angle)],
 			[-math.sin(angle), math.cos(angle)]]) 
-		print rot_matrix
 		self.direction = dot( rot_matrix, self.direction )
 
 	def draw(self, surface):
@@ -443,9 +446,9 @@ obstacles_list = [polyframe1]
 
 #Add guards
 guard_list = pygame.sprite.Group()
-guard_list.add( Guard( array([83.000000, 430.000000]), array([ 0.5, 2.0 ])))
-guard_list.add( Guard( array([461.000000, 817.000000]), array([ 0.5, 2.0 ])))
-guard_list.add( Guard( array([1069.000000, 480.000000]), array([ 0.5, 2.0 ])))
+# guard_list.add( Guard( array([83.000000, 430.000000]), array([ 0.5, 2.0 ])))
+# guard_list.add( Guard( array([461.000000, 817.000000]), array([ 0.5, 2.0 ])))
+# guard_list.add( Guard( array([1069.000000, 480.000000]), array([ 0.5, 2.0 ])))
 
 all_sprites_list.add( guard_list )
 
@@ -469,6 +472,7 @@ clicked_sprites = []
 # Used to manage how fast the screen updates
 clock=pygame.time.Clock()
 done = False
+speed = -0.5
 
 while not done:
 	#Event processing
@@ -506,7 +510,7 @@ while not done:
 					point.kill()
 	
 	#Game logic
-	all_sprites_list.update()
+	all_sprites_list.update(speed) 
 	
 	#Drawing
 	screen.fill((255,255,255))

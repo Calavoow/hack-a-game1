@@ -156,28 +156,20 @@ class Obstacle(pygame.sprite.Sprite):
 		#Subclasses should provide the rect and the image
 		
 		self.lines = lines
-	
-	#def closest_intersection(self, pos, line):
-	#	line.closest_intersection(pos, self.lines)
-	
-# 	# Check what line (if any) of the lines intersects with the given line
-# 	def intersecting_line(self, other_line):
-# 		isc_lines = []
-# 		for line in self.translated_lines:
-# 			if line.intersects(other_line):
-# 				isc_lines.append(line)
-# 		#In the case that no line intersects
-# 		if isc_lines.length == 0: None
-# 		#Else, select the line closest to the other line's first point
-# 		else:
-# 			mindist = linalg.norm((isc_lines[0].intersection_point(other_line) - other_line.p1))
-# 			closest = isc_lines[0]
-# 			for line in isc_lines:
-# 				dist = linalg.norm((line[0].intersection_point(other_line) - other_line.p1))
-# 				if dist < mindist:
-# 					mindist = dist
-# 					closest = line
-# 		return closest
+
+	@property
+	def pos(self):
+		return self._pos
+
+	@pos.setter
+	def pos(self, value):
+		self._pos = value
+		self.rect.x = self._pos[0]
+		self.rect.y = self._pos[1]
+
+	@property
+	def center_pos( self ):
+		return self.pos + array([self.collision_point[0], self.collision_point[1]])
 	
 	# Draw the line on the image
 	def draw_lines(self, color):
@@ -186,8 +178,11 @@ class Obstacle(pygame.sprite.Sprite):
 	
 	# Call this method to get the lines, translated according to rect.x and rect.y
 	def translated_lines(self):
-		def translate(line): return line.translate(array([self.rect.x, self.rect.y]))
+		def translate(line): return line.translate(self.pos)
 		return map(translate, self.lines)
+	
+	def update( self, x_offset ):
+		self.pos = self.pos + array([ x_offset, 0.0 ])
 	
 
 """
@@ -224,9 +219,7 @@ class PolygonFrame(Obstacle):
 		self.rect = self.image.get_rect()
 		
 		#Set position to (0, 0)
-		self.rect.x = 0
-		self.rect.y = 0
-
+		self.pos = array([0, 0,])
 
 
 # l1 = Line(array([0.0, 0.0]), array([3.0, 3.0]))
