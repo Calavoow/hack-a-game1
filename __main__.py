@@ -2,7 +2,8 @@ import pygame
 import math
 import os
 import re
-import tiles
+#import tiles
+import time
 
 from numpy import array, dot, linalg
 from Queue import Queue
@@ -466,6 +467,9 @@ clicked_sprites = []
 # Keep track of last added tile
 #last_tile = start_tile
 
+# Keep track of time elapsed, for score
+start = time.clock()
+
 # THE GAME LOOP
 # Used to manage how fast the screen updates
 clock=pygame.time.Clock()
@@ -525,6 +529,13 @@ while not done:
 				[prev_pos[0], prev_pos[1]],
 				[pos[0], pos[1]])
 		prev_pos = pos
+	
+	# Show score
+	elapsed = time.clock() - start
+	font = pygame.font.Font(None, 36)
+	text = font.render("Score: %.0f" % (elapsed*10), True, (0,0,0))
+	textpos = text.get_rect(centerx=screen_width/2)
+	screen.blit(text, textpos)
 
 	#FPS limited to 60
 	clock.tick(60)
