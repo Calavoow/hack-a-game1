@@ -1,6 +1,8 @@
 import pygame
 import math
 import objects
+import os
+import re
 
 from numpy import array, dot, linalg
 from Queue import Queue
@@ -149,7 +151,8 @@ class Unit(pygame.sprite.Sprite):
 		self.image = surface
 
 		# Collision box
-		self.rect = self.image.get_rect()
+		self.rect = self.image.get_rect() 
+		self.collision_point = self.rect.center
 		#Set position
 		self.pos = pos 
 		# And movement
@@ -169,7 +172,7 @@ class Unit(pygame.sprite.Sprite):
 
 	@property
 	def center_pos( self ):
-		return self.pos + array([self.rect.width/2, self.rect.height/2])
+		return self.pos + array([self.collision_point[0], self.collision_point[1]])
 	
 	def update(self):
 		if self.path_calc.is_collided():
@@ -193,17 +196,27 @@ class Unit(pygame.sprite.Sprite):
 
 class Player(Unit):
 	def __init__(self, pos, movement):
-		super(Player, self).__init__(pygame.Surface((32, 32)), pos, movement)
+		super(Player, self).__init__(pygame.Surface((32, 48)), pos, movement)
 
 		#The image will be a 32x32 circle 
 		self.image.set_colorkey(( 0, 0, 0 ))		  
 		pygame.draw.circle(self.image, (255,0,0), [16,16], 16)
 		pygame.draw.circle(self.image, (0,0,255), [16,16], 1)
+		pygame.draw.rect(self.image, (0,255,0), pygame.Rect(0,0,32,48))
 
 		self.bounce_angle = 0.0
 		self.bounce_angles = Queue()
 
+		# Manually change the collision point
+		self.collision_point = (16, 32) 
+
 		self.path_calc = PathCalculator(self, True)
+		
+		# Load image and settings
+		self.images = self.loadImages()
+		self.frame = 0
+		self.delay = 6
+		self.pause = 0
 
 	def update(self):
 		# Collision with guard
@@ -218,12 +231,50 @@ class Player(Unit):
 			testtesttest=5
 			#print "Collided with target"
 
-
-		if self.path_calc.is_collided():
+		if self.path_calc.is_collided():	
 			#print "Collision with line."
 			self.bounce()
 
 		self.pos = self.pos + self.movement
+
+		# Animate the sprite
+		self.pause += 1
+		if self.pause == self.delay:
+			self.pause = 0
+			self.frame = ( self.frame + 1 ) % len( self.images['front'] )
+			angle = math.atan2(self.movement[1], self.movement[0])
+			#Right side
+			if angle > -math.pi/4 and angle < math.pi/4:
+				side = 'right'
+			#Front side
+			elif angle > math.pi/4 and angle < 3*math.pi/4:
+				side = 'front'
+			#Back side
+			elif angle > -3*math.pi/4 and angle < -math.pi/4:
+				side = 'back'
+			else:
+				side = 'left'
+
+			self.image = self.images[side][self.frame]
+		
+	
+	def loadImages(self):
+		images = { 'front': [0]*4, 'back': [0]*4, 'left': [0]*4, 'right': [0]*4 }
+		image_directory = os.path.join('images','spy')
+		image_name_regex = re.compile(r"_[^\W\d_]+(\d)+")
+		key_regex = re.compile(r"[^\W\d_]+")
+		number_regex = re.compile(r"(\d)+")
+		for image in os.listdir(image_directory):
+			result = image_name_regex.search(image).group(0)
+			key = key_regex.search( result ).group(0)
+			number = number_regex.search( result ).group(0)
+			images[key][int(number)] = pygame.image.load(
+				os.path.join(image_directory, image ))
+
+		# Also generate the right images, from the left ones.
+		for i, image in enumerate(images['left']):
+			images['right'][i] = pygame.transform.flip(image, True, False)
+		return images
 
 class Guard(Unit):
 	def __init__(self, pos, movement):
@@ -317,8 +368,8 @@ class PathCalculator():
 		intersecting_line = movement_line.closest_intersection_with_obstacle(
 			self.unit.center_pos, intersecting_obstacle)	
 		return (intersecting_obstacle, intersecting_line)
-	
-	def sync_position( self ):
+
+	def sync_position( self, surface=None ):
 		""" Sync the position of the PathCalculator with the self.unit.
 			This repairs the drift in float calculation.
 		"""
@@ -336,16 +387,29 @@ class PathCalculator():
 			direction = self.direction_queue.get()
 			new_direction_queue.put( direction )
 
+			old_pos = self.pos
 			# Jump to a line
 			self.calc_next()
+			# Draw a line if a surface is given.
+			if surface:
+				pygame.draw.aaline( surface, (255,0,255),
+					[old_pos[0], old_pos[1]],
+					[self.pos[0], self.pos[1]])
 			# And set the direction as stored in the Queue.
 			self.direction = direction
+
 		self.direction_queue = new_direction_queue
 
 		# Do the last jump to the latest position.
+		old_pos = self.pos
 		self.calc_next()
 		self.direction = previous_direction
 		self.angle = previous_angle
+		# Draw the last line.
+		if surface:
+			pygame.draw.aaline( surface, (255,0,255),
+				[old_pos[0], old_pos[1]],
+				[self.pos[0], self.pos[1]])
 	
 	def increase_angle( self ):
 		if self.angle + 10 <= self.MAX_ANGLE:
@@ -371,7 +435,7 @@ class PathCalculator():
 		self.direction = dot( rot_matrix, self.direction )
 
 	def draw(self, surface):
-		self.sync_position()
+		self.sync_position( surface = surface )
 
 		# Draw the the outbound direction.
 		point2 = 20 * self.direction + self.pos
@@ -499,6 +563,7 @@ all_sprites_list.add(player)
 clicked = []
 clicked_sprites = []
 
+all_sprites_list.add(Point(185.27589661,  336.0))
 
 # THE GAME LOOP
 # Used to manage how fast the screen updates
