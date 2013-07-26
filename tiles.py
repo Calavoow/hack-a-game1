@@ -17,8 +17,8 @@ class Tile:
 		self.pos = array([0.0, 0.0])
 	
 	# Used to move the tile with the rest of the level
-	def update(self, offsetx):
-		self.pos = self.pos + array([offsetx, 0.0])
+	def update(self, x_offset, y_offset):
+		self.pos = self.pos + array([x_offset, y_offset])
 	
 	# Adjust the position of this tile to fit to the given tile (on the right side)
 	def fit_to(self, other_tile):

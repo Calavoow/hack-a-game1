@@ -187,8 +187,8 @@ class Obstacle(pygame.sprite.Sprite):
 		def translate(line): return line.translate(self.pos)
 		return map(translate, self.lines)
 	
-	def update( self, x_offset ):
-		self.pos = self.pos + array([ x_offset, 0.0 ])
+	def update( self, x_offset, y_offset ):
+		self.pos = self.pos + array([ x_offset, y_offset ])
 	
 """
 The Polygon class represents an obstacle that consists of a simple closed polygon of lines,
