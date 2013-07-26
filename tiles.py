@@ -72,12 +72,16 @@ def make_tile2():
 	tile = Tile()
 	
 	# Set the outline
-	tile.outline = Obstacle( array([0.0, 0.0]), array([400.0, 300.0]), [
-		Line( array([0.0, 200.0]), array([200.0, 0.0])),
-		Line( array([200.0, 0.0]), array([400.0, 0.0])),
-		Line( array([0.0, 300.0]), array([200.0, 100.0])),
-		Line( array([200.0, 100.0]), array([400.0, 100.0]))
-	])
+	p1 = make_path([ array([0.0, 200.0]), array([200.0, 0.0]), array([400.0, 0.0])])
+	p2 = make_path([ array([0.0, 300.0]), array([200.0, 100.0]), array([400.0, 100.0])])
+	tile.outline = Obstacle( array([0.0, 0.0]), array([400.0, 300.0]), p1 + p2)
+# 	tile.outline = Obstacle( array([0.0, 0.0]), array([400.0, 300.0]), [
+# 		Line( array([0.0, 200.0]), array([200.0, 0.0])),
+# 		Line( array([200.0, 0.0]), array([400.0, 0.0])),
+# 		Line( array([0.0, 300.0]), array([200.0, 100.0])),
+# 		Line( array([200.0, 100.0]), array([400.0, 100.0]))
+# 	])
+	
 	tile.outline.draw_lines((0,0,0))
 	tile.entrance = array([0.0, 200.0])
 	tile.exit = array([400.0, 0.0])
@@ -88,12 +92,16 @@ def make_tile3():
 	tile = Tile()
 	
 	# Set the outline
-	tile.outline = Obstacle( array([0.0, 0.0]), array([400.0, 300.0]), [
-		Line( array([0.0, 200.0]), array([200.0, 0.0])),
-		Line( array([200.0, 0.0]), array([400.0, 200.0])),
-		Line( array([0.0, 300.0]), array([200.0, 100.0])),
-		Line( array([200.0, 100.0]), array([400.0, 300.0]))
-	])
+	p1 = make_path([ array([0.0, 200.0]), array([200.0, 0.0]), array([400.0, 200.0])])
+	p2 = make_path([ array([0.0, 300.0]), array([200.0, 100.0]), array([400.0, 300.0])])
+	tile.outline = Obstacle( array([0.0, 0.0]), array([400.0, 300.0]), p1 + p2)
+# 	tile.outline = Obstacle( array([0.0, 0.0]), array([400.0, 300.0]), [
+# 		Line( array([0.0, 200.0]), array([200.0, 0.0])),
+# 		Line( array([200.0, 0.0]), array([400.0, 200.0])),
+# 		Line( array([0.0, 300.0]), array([200.0, 100.0])),
+# 		Line( array([200.0, 100.0]), array([400.0, 300.0]))
+# 	])
+
 	tile.outline.draw_lines((0,0,0))
 	tile.entrance = array([0.0, 200.0])
 	tile.exit = array([400.0, 200.0])

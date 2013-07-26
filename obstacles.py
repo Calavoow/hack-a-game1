@@ -189,7 +189,17 @@ class Obstacle(pygame.sprite.Sprite):
 	
 	def update( self, x_offset, y_offset ):
 		self.pos = self.pos + array([ x_offset, y_offset ])
+
+"""
+An obstacle that is not moved in the update function
+"""
+class StaticObstacle(Obstacle):
+	def __init__(self,pos,size,lines):
+		super(StaticObstacle, self).__init__(pos, size, lines)
 	
+	def update(self, x_offset, y_offset):
+		pass
+		
 """
 The Polygon class represents an obstacle that consists of a simple closed polygon of lines,
 	with possibly an underlying image. Basically, it uses a set of points to make a set of lines
@@ -288,3 +298,18 @@ class Door(Polygon):
 		self.image.fill((255, 255, 255))
 		pygame.draw.line(self.image, (0, 180, 0), [self.bound, self.bound], [self.width - self.bound, self.height - self.bound], 5)
 
+
+def make_path(points, closed = False):
+		# The lines should connect the points
+		lines = []
+		lastpoint = None
+		for point in points:
+			if lastpoint != None:
+				line = Line(lastpoint, point)
+				lines.append(line)
+			lastpoint = point
+		
+		if closed and len(points) > 0:
+			lines.append( Line(points[-1], points[0]) )
+		
+		return lines
