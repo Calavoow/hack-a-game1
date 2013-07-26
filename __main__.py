@@ -530,9 +530,9 @@ while not done:
 	# Player following camera
 	player_y = player.pos[1] - screen_height/2
 	if player_y < 0:
-		speed_y = max( player_y, -0.5 )
+		speed_y = min( -player_y, 0.5 )
 	elif player_y > 0:
-		speed_y = min( player_y, 0.5) 
+		speed_y = max( -player_y, -0.5) 
 	
 	all_sprites_list.update(speed, speed_y)
 	last_tile.update(speed, speed_y)
