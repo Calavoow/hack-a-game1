@@ -1,5 +1,6 @@
 from obstacles import *
 from numpy import array
+from random import randint
 
 # Tile class
 class Tile:
@@ -53,13 +54,13 @@ def make_tile1():
 	tile = Tile()
 	
 	# Set the outline
-	tile.outline = Obstacle( array([0.0, 0.0]), array([1300.0, 600.0]), [
-		Line( array([0.0, 200.0]), array([1300, 200.0])),
-		Line(array([0.0, 300.0]), array([1300, 300.0]))
+	tile.outline = Obstacle( array([0.0, 0.0]), array([500.0, 600.0]), [
+		Line( array([0.0, 200.0]), array([500, 200.0])),
+		Line(array([0.0, 300.0]), array([500, 300.0]))
 	])
 	tile.outline.draw_lines((0,0,0))
 	tile.entrance = array([0.0, 200.0])
-	tile.exit = array([1300.0, 200.0])
+	tile.exit = array([500.0, 200.0])
 	
 	return tile;
 
@@ -83,15 +84,36 @@ def make_tile2():
 	
 	return tile;
 
+def make_tile3():
+	tile = Tile()
+	
+	# Set the outline
+	tile.outline = Obstacle( array([0.0, 0.0]), array([400.0, 300.0]), [
+		Line( array([0.0, 200.0]), array([200.0, 0.0])),
+		Line( array([200.0, 0.0]), array([400.0, 200.0])),
+		Line( array([0.0, 300.0]), array([200.0, 100.0])),
+		Line( array([200.0, 100.0]), array([400.0, 300.0]))
+	])
+	tile.outline.draw_lines((0,0,0))
+	tile.entrance = array([0.0, 200.0])
+	tile.exit = array([400.0, 200.0])
+	
+	return tile;
+
 # List of all tile builders
 tileset = [
 	make_tile1,
-	make_tile2
+	make_tile2,
+	make_tile3
 ]
 
 # Function to get a new copy of a specific tile
 def get_tile(n):
 	return tileset[n]()
+
+def get_random_tile():
+	n = randint(0, len(tileset) - 1)
+	return get_tile(n)
 
 # Get a new tile, and initialize it
 def make_tile(n, prev_tile, sprite_group, obstacle_list):
@@ -100,3 +122,7 @@ def make_tile(n, prev_tile, sprite_group, obstacle_list):
 	tile.add_obstacles_to(obstacle_list)
 	tile.fit_to(prev_tile)
 	return tile
+
+def make_random_tile(prev_tile, sprite_group, obstacle_list):
+	n = randint(0, len(tileset) - 1)
+	return make_tile(n, prev_tile, sprite_group, obstacle_list)

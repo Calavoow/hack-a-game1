@@ -461,12 +461,8 @@ start_tile.add_obstacles_to(obstacles_list)
 start_tile.pos = array([0.0, 0.0])
 """
 # Make another tile
-t1 = tiles.make_tile(1, None, all_sprites_list, obstacles_list)
-t1.place_at(array([0.0, 500.0]))
-t2 = tiles.make_tile(1, t1, all_sprites_list, obstacles_list)
-t3 = tiles.make_tile(1, t2, all_sprites_list, obstacles_list)
-t4 = tiles.make_tile(1, t3, all_sprites_list, obstacles_list)
-
+t1 = tiles.make_tile(0, None, all_sprites_list, obstacles_list)
+t1.place_at(array([0.0, 400.0]))
 
 #And set the player
 player = Player( array([50.0, 450.0]), array([ 2.0 , 2.0 ]))
@@ -477,7 +473,7 @@ clicked = []
 clicked_sprites = []
 
 # Keep track of last added tile
-last_tile = t4
+last_tile = t1
 
 # Keep track of time elapsed, for score
 start = time.clock()
@@ -528,6 +524,9 @@ while not done:
 	#Game logic
 	all_sprites_list.update(speed)
 	last_tile.update(speed)
+	# If the newest tile is almost in the screen, add make a new tile
+	if last_tile.pos[0] < screen_width + 400.0:
+		last_tile = tiles.make_random_tile(last_tile, all_sprites_list, obstacles_list)
 	
 	#Drawing
 	screen.fill((255,255,255))
