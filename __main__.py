@@ -182,6 +182,7 @@ class PathCalculator():
 	MIN_ANGLE = -30./360. * 2. * math.pi
 	MAX_ANGLE = 30./360. * 2. * math.pi
 	MAX_DIRECTIONS = 3
+	FORBIDDEN_BUFFER = 5./360 * 2. * math.pi
 
 	def __init__(self, unit, player=False):
 		self.pos = unit.center_pos
@@ -189,6 +190,8 @@ class PathCalculator():
 		self.unit = unit 
 
 		self.angle = 0
+		self.forbidden_angle1 = 0
+		self.forbidden_angle2 = 0
 		self.ignore_lines = [] 
 		self.direction_queue = Queue(maxsize=self.MAX_DIRECTIONS)
 		self.calc_next()
@@ -233,6 +236,13 @@ class PathCalculator():
 				# Then figure out the outbound angle.
 				outbound_direction = self.line_collision(direction_line, intersecting_line)
 				self.direction = outbound_direction / linalg.norm( outbound_direction )
+
+				# Calculate maximum angles
+				normal = intersecting_line.get_normal()
+				normal_angle = math.atan2( normal[1], normal[0] )
+				# -pi < angle <= pi
+				self.forbidden_angle1 = normal_angle + 3.*math.pi/2. % (2.*math.pi) - math.pi
+				self.forbidden_angle2 = normal_angle + math.pi/2. % (2.*math.pi) - math.pi
 			else:
 				# print "PathCalculator couldn't find a line to jump to."
 				pass
@@ -314,9 +324,8 @@ class PathCalculator():
 			rotation = min( angle, self.ANGLE_CHANGE )
 		else:
 			rotation = max( angle, -self.ANGLE_CHANGE )
-		if self.MAX_ANGLE >= self.angle + rotation and self.MIN_ANGLE <= self.angle + rotation:
-			self.angle += rotation
-			self.rotate_direction( rotation )
+
+		self.rotate_direction( rotation )
 		
 	def left_pressed( self ):
 		angle = math.atan2( self.direction[1], self.direction[0] )
@@ -324,9 +333,8 @@ class PathCalculator():
 			rotation = max( -angle, -self.ANGLE_CHANGE )
 		else:
 			rotation = min( -angle, self.ANGLE_CHANGE )
-		if self.MAX_ANGLE >= self.angle + rotation and self.MIN_ANGLE <= self.angle + rotation:
-			self.angle += rotation
-			self.rotate_direction( rotation )
+
+		self.rotate_direction( rotation )
 	
 	def up_pressed( self ):
 		angle = math.atan2( self.direction[0], self.direction[1] )
@@ -334,9 +342,8 @@ class PathCalculator():
 			rotation = min( angle, self.ANGLE_CHANGE )
 		else:
 			rotation = max( angle, -self.ANGLE_CHANGE )
-		if self.MAX_ANGLE >= self.angle + rotation and self.MIN_ANGLE <= self.angle + rotation:
-			self.angle += rotation
-			self.rotate_direction( rotation )
+
+		self.rotate_direction( rotation )
 	
 	def down_pressed( self ):
 		angle = math.atan2( self.direction[0], self.direction[1] )
@@ -344,16 +351,30 @@ class PathCalculator():
 			rotation = max( -angle, -self.ANGLE_CHANGE )
 		else:
 			rotation = min( -angle, self.ANGLE_CHANGE )
-		if self.MAX_ANGLE >= self.angle + rotation and self.MIN_ANGLE <= self.angle + rotation:
+
+		self.rotate_direction( rotation )
+	
+	def rotate_direction( self, rotation ):
+		""" Rotate the direction of this Path Calculator,
+			This will keep in mind set limits on angles.
+		"""
+		future_angle = self.angle + rotation
+		current_rotation = math.atan2( self.direction[1], self.direction[0] )
+		future_rotation = current_rotation + rotation
+		if self.MAX_ANGLE >= future_angle and self.MIN_ANGLE <= future_angle\
+			and abs( future_rotation - self.forbidden_angle1 ) > self.FORBIDDEN_BUFFER \
+			and abs( future_rotation - self.forbidden_angle2 ) > self.FORBIDDEN_BUFFER:
 			self.angle += rotation
-			self.rotate_direction( rotation )
+			self.rotate_direction_calc( rotation )
 	
 	def confirm_angle( self ):
 		if not self.direction_queue.full():
 			self.direction_queue.put( self.direction )
 			self.calc_next()
 
-	def rotate_direction( self, angle ):
+	def rotate_direction_calc( self, angle ):
+		""" Calculate the new direction when self is rotated an angle.
+		"""
 		rot_matrix = array([[math.cos(angle), math.sin(angle)],
 			[-math.sin(angle), math.cos(angle)]]) 
 		self.direction = dot( rot_matrix, self.direction )
