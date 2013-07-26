@@ -69,6 +69,80 @@ class SimpleRoom(objects.Obstacle):
 		self.rect.x = 0
 		self.rect.y = 0
 
+# A square button that can activate an object when touched
+class Button(objects.Polygon):
+	def __init__(self, x, y, callback):
+		size = 32
+		#The corner points of the button
+		points = [
+			array([0.0, 0.0]),
+			array([size, 0.0]),
+			array([size, size]),
+			array([0.0, size])
+		]
+		super(Button, self).__init__(points)
+		
+		#The image will be a placeholder square button
+		self.image = pygame.Surface((size, size))
+		self.image.fill((170, 170, 170))
+		pygame.draw.rect(self.image, (255, 0, 0), [size/5, size/3, 3*size/5, 1*size/3])
+		#Let's draw lines on top of the image for debugging
+		#self.draw_lines((0,0,0))
+		#Collision box
+		self.rect = self.image.get_rect()			
+		#Set position
+		self.rect.x = x
+		self.rect.y = y
+		
+		#This function is called then the button is touched
+		self.callback = callback
+	
+	# Override the touched method to see when the button is pressed by player
+	def touched(self, line, unit):
+		if (unit == player):
+			print "PLAYER TOUCHED ", self
+			self.callback(unit)
+			
+# A door that is effectively a line between two points
+class Door(objects.Polygon):
+	def __init__(self, p1, p2):
+		#Take some extra rect space
+		self.bound = 3
+		# Do some calculations to get everything in the right place
+		self.width = math.fabs(p1[0] - p2[0]) + 2*self.bound
+		self.height = math.fabs(p1[1] - p2[1]) + 2*self.bound
+		top = min([p1[1], p2[1]]) - self.bound
+		left = min([p1[0], p2[0]]) - self.bound
+		
+		#The corner points of the door
+		points = [array([self.bound, self.bound])
+				, array([self.width - self.bound, self.height - self.bound])]
+		super(Door, self).__init__(points)
+
+		#The image will be a placeholder line
+		self.image = pygame.Surface((self.width, self.height))
+		self.image.fill((255, 255, 255))
+		self.image.set_colorkey((255, 255, 255))
+		pygame.draw.line(self.image, (180, 0, 0), [self.bound, self.bound], [self.width - self.bound, self.height - self.bound], 5)
+
+		#Collision box
+		self.rect = self.image.get_rect()			
+		#Set position to the top left point of a box enclosing the line
+		self.rect.x = left
+		self.rect.y = top
+
+	
+	# Opens the door, allowing passage through
+	def open(self):
+		print "DOOR HAS BEEN OPENED"
+		# Remove collision line
+		self.lines = []
+		# Change graphics
+		self.image.fill((255, 255, 255))
+		pygame.draw.line(self.image, (0, 180, 0), [self.bound, self.bound], [self.width - self.bound, self.height - self.bound], 5)
+		
+
+
 class Unit(pygame.sprite.Sprite):
 	def __init__(self, surface, pos, movement):
 		super(Unit, self).__init__()	
@@ -106,12 +180,20 @@ class Unit(pygame.sprite.Sprite):
 		self.pos = self.pos + array([x_offset, 0.0])
 
 		if self.path_calc.is_collided():
-			new_direction = self.path_calc.next()
-			# Magnitude * normalized direction
-			self.movement = linalg.norm(self.movement) * new_direction
-
+			self.bounce()
+			
 		# Can't do +=
 		self.pos = self.pos + self.movement
+	
+	# Called when the unit has collided with an obstacle
+	def bounce(self):
+		# Let the object know that one of its lines has been touched
+		obstacle, line = self.path_calc.get_collision()
+		obstacle.touched(line, self)
+		# Change direction
+		new_direction = self.path_calc.next()
+		# Magnitude * normalized direction
+		self.movement = linalg.norm(self.movement) * new_direction
 	
 	def __repr__(self):
 		return "%s at pos: %s" % (self.__class__.__name__, self.pos )
@@ -244,7 +326,7 @@ class PathCalculator():
 		# Otherwise use the direction in the queue
 		else:
 			next_direction = self.direction_queue.get()
-		print "Next direction for %s: %s" % ( self.unit, next_direction )
+		#print "Next direction for %s: %s" % ( self.unit, next_direction )
 		return next_direction
 
 	def calc_next(self):
@@ -284,6 +366,16 @@ class PathCalculator():
 			self.unit.center_pos, intersecting_obstacle)
 		return intersecting_line is not None
 	
+	# Can be called after is_collided to get collided obstacle and line
+	def get_collision( self ):
+		movement_line = objects.Line( self.unit.center_pos,
+			self.unit.center_pos + self.unit.movement)
+		intersecting_obstacle = movement_line.closest_intersecting_obstacle(
+			self.unit.center_pos, obstacles_list)
+		intersecting_line = movement_line.closest_intersection_with_obstacle(
+			self.unit.center_pos, intersecting_obstacle)	
+		return (intersecting_obstacle, intersecting_line)
+
 	def sync_position( self, surface=None ):
 		""" Sync the position of the PathCalculator with the self.unit.
 			This repairs the drift in float calculation.
@@ -406,7 +498,7 @@ polyframe1 = objects.PolygonFrame([
 array([50.000000, 43.000000]),
 array([386.000000, 46.000000]),
 array([396.000000, 330.000000]),
-array([253.000000, 333.000000]),
+array([253.000000, 336.000000]),
 array([240.000000, 757.000000]),
 array([405.000000, 750.000000]),
 array([410.000000, 476.000000]),
@@ -438,7 +530,8 @@ array([647.000000, 573.000000]),
 array([535.000000, 579.000000]),
 array([535.000000, 759.000000]),
 array([523.000000, 878.000000]),
-array([40.000000, 858.000000])
+array([40.000000, 858.000000]),
+array([46.000000, 336.000000])
 ])
 
 all_sprites_list.add(polyframe1)
@@ -458,6 +551,15 @@ target_list.add( Target( array([575.000000, 375.000000]), array([ 0.0, 0.0 ])))
 
 all_sprites_list.add( target_list )
 
+# Add interactive elements
+door1 = Door( array([253.000000, 336.000000]), array([46.000000, 336.000000]))
+for element in [
+	door1,
+	Button(242.000000, 125.000000, lambda unit: door1.open())
+]:
+	all_sprites_list.add(element)
+	obstacles_list.append(element)
+
 #And set the player
 player = Player( array([119.000000, 120.000000]), array([ 2.0 , 2.0 ]))
 
@@ -467,6 +569,7 @@ all_sprites_list.add(player)
 clicked = []
 clicked_sprites = []
 
+all_sprites_list.add(Point(185.27589661,  336.0))
 
 # THE GAME LOOP
 # Used to manage how fast the screen updates

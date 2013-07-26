@@ -66,9 +66,7 @@ class Line:
 	
 	def closest_intersection(self, pos, other_lines, ignore_lines = []):
 		"""Find the closest other intersecting line with self.
-		""" 
-		msg = "Starting intersection with line ", self, " at pos ", pos, "\n"
-		
+		""" 		
 		if other_lines == None:
 			return None
 		
@@ -79,7 +77,6 @@ class Line:
 			if line not in ignore_lines:
 				if line.intersects( self ):
 					intersection_point = line.intersection_point( self )
-					msg += "Intersection point = ", intersection_point, ", intersecting line = ", line, "\n"
 					dist = linalg.norm( intersection_point - pos )
 					if dist < smallest_dist:
 							smallest_dist = dist
@@ -87,9 +84,9 @@ class Line:
 					elif dist == smallest_dist:
 						# SUPER DUPER CORNERCASE, the line intersects a place where two lines overlap/touch (probably a corner)
 						print "Extreme corner bounce, intersection point = ", intersection_point
+						print "		-> closest = " , closest_line, ", new = ", line
+						print "			-> #lines to check = ", len(other_lines)
 					
-		msg+= "Closest line was ", closest_line, "\n"
-		#if closest_line != None: print msg
 		return closest_line
 	
 	#Returns the closest intersecting obstacle to pos
@@ -171,6 +168,11 @@ class Obstacle(pygame.sprite.Sprite):
 	def center_pos( self ):
 		return self.pos + array([self.collision_point[0], self.collision_point[1]])
 	
+	# Called when a line of the obstacle is touched by a unit
+	def touched(self, line, unit):
+		# Does not do anything for a typical object
+		pass
+	
 	# Draw the line on the image
 	def draw_lines(self, color):
 		for line in self.lines:
@@ -184,16 +186,19 @@ class Obstacle(pygame.sprite.Sprite):
 	def update( self, x_offset ):
 		self.pos = self.pos + array([ x_offset, 0.0 ])
 	
-
 """
-The PolygonFrame class represents an obstacle that consists of a simple closed polygon of lines,
-	without an image.
+The Polygon class represents an obstacle that consists of a simple closed polygon of lines,
+	with possibly an underlying image. Basically, it uses a set of points to make a set of lines
+	forming a closed polygon.
 """
-class PolygonFrame(Obstacle):
-	def __init__(self, points, size = [1240, 900]):
+class Polygon(Obstacle):
+	def __init__(self, points):
 		# The lines should connect the points
 		lines = []
-		if len( points ) > 1:
+		if len( points ) == 2:
+			#The special case of a line
+			lines.append(Line(points[0], points[1]))
+		elif len( points ) > 1:
 			# Meanwhile keep track of the bounds of the figure
 			#### --- this could be implemented in the future
 # 			left = float("inf")
@@ -208,7 +213,16 @@ class PolygonFrame(Obstacle):
 				lastpoint = point
 
 		# Call the parent class (Obstacle) constructor
-		super(PolygonFrame, self).__init__(lines)
+		super(Polygon, self).__init__(lines)
+
+"""
+The PolygonFrame class represents an obstacle that consists of a simple closed polygon of lines,
+	without NO IMAGE. Only the lines are visible.
+"""
+class PolygonFrame(Polygon):
+	def __init__(self, points, size = [1240, 900]):
+		# Call the parent class (Polygon) constructor
+		super(PolygonFrame, self).__init__(points)
 		#The image will be completely transparent
 		self.image = pygame.Surface(size)
 		self.image.fill((255,255,255))
@@ -220,7 +234,6 @@ class PolygonFrame(Obstacle):
 		
 		#Set position to (0, 0)
 		self.pos = array([0, 0,])
-
 
 # l1 = Line(array([0.0, 0.0]), array([3.0, 3.0]))
 # l2 = Line(array([1.0, -1.0]), array([1.0, 2.0]))
