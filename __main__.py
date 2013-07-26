@@ -126,29 +126,9 @@ class Player(Unit):
 			print "Collision with line."
 			new_direction = self.path_calc.next()
 			# Magnitude * normalized direction
-			new_movement = linalg.norm(self.movement) * new_direction
-			# Adjust the angle of the new_movement, according to bounce input.
-			if not self.bounce_angles.empty():
-				angle = self.bounce_angles.get()
-				rot_matrix = array([[math.cos(angle), math.sin(angle)],
-					[-math.sin(angle), math.cos(angle)]]) 
-				new_movement = dot( rot_matrix, new_movement )
-			self.movement = new_movement
+			self.movement = linalg.norm(self.movement) * new_direction
 
 		self.pos = self.pos + self.movement
-
-	def increase_bounce_angle( self ):
-		self.bounce_angle += 10.0/360.0 * 2.0 * math.pi
-		print "Increased bounce angle to %s" % self.bounce_angle
-	
-	def decrease_bounce_angle( self ):
-		self.bounce_angle -= 10.0/360.0 * 2.0 * math.pi
-		print "Decreased bounce angle to %s" % self.bounce_angle
-	
-	def confirm_bounce_angle( self ):
-		print "Bounce angle set to %s" % self.bounce_angle
-		self.bounce_angles.put( self.bounce_angle )
-		self.bounce_angle = 0.0
 
 class Guard(Unit):
 	def __init__(self, pos, movement):
@@ -167,19 +147,25 @@ class Target(Unit):
 		pygame.draw.circle(self.image, ( 31, 196, 255 ), [8,8], 8)
 
 class PathCalculator():
+	MIN_ANGLE = -30
+	MAX_ANGLE = 30
+
 	def __init__(self, unit, player=False):
 		self.pos = unit.center_pos
 		self.direction = unit.movement
 		self.unit = unit 
 
+		self.angle = 0
 		self.ignore_lines = [] 
 		self.direction_queue = Queue()
-		self.direction_queue.put( self.calc_next())
+		self.calc_next()
 	
 	def next(self):
-		next_direction = self.direction_queue.get()
 		if self.direction_queue.empty():
-			self.direction_queue.put( self.calc_next())
+			next_direction = self.direction
+			self.calc_next()
+		else:
+			next_direction = self.direction_queue.get()
 		print "Next direction for %s: %s" % ( self.unit, next_direction )
 		return next_direction
 
@@ -196,18 +182,19 @@ class PathCalculator():
 			intersecting_line = direction_line.closest_intersection_with_obstacle(
 				self.pos, intersecting_obstacle, ignore_lines=self.ignore_lines)
 			assert intersecting_line is not None, "PathCalculator couldn't find a line to jump to." #Truthy
-			print "Intersecting with: ", intersecting_line
 
 			# Set new position to intersection point.
 			intersecting_point = direction_line.intersection_point( intersecting_line ) 
-			print "%s intersects at: %s" % (self, intersecting_point)
 			self.pos = intersecting_point
 			self.ignore_lines = [intersecting_line]
 			
 			# Then figure out the outbound angle.
 			outbound_direction = self.line_collision(direction_line, intersecting_line)
 			self.direction = outbound_direction / linalg.norm( outbound_direction )
-		return self.direction
+		# self.direction_queue.put( self.direction )
+
+		# Reset player angle adjustments.
+		self.angle = 0
 	
 	def is_collided( self ):
 		movement_line = objects.Line( self.unit.center_pos,
@@ -215,6 +202,28 @@ class PathCalculator():
 		intersecting_obstacle = movement_line.closest_intersecting_obstacle(self.unit.pos, obstacles_list)
 		intersecting_line = movement_line.closest_intersection_with_obstacle(self.unit.pos, intersecting_obstacle)
 		return intersecting_line is not None
+	
+	def increase_angle( self ):
+		if self.angle + 10 <= self.MAX_ANGLE:
+			print "Increase angle"
+			self.angle += 10
+			self.rotate_direction( 10.0/360.0 * 2.0 * math.pi )
+
+	def decrease_angle( self ):
+		if self.angle - 10 >= self.MIN_ANGLE:
+			print "Decrease angle"
+			self.angle -= 10
+			self.rotate_direction( -10.0/360 * 2 * math.pi )
+	
+	def confirm_angle( self ):
+		self.direction_queue.put( self.direction )
+		self.calc_next()
+
+	def rotate_direction( self, angle ):
+		rot_matrix = array([[math.cos(angle), math.sin(angle)],
+			[-math.sin(angle), math.cos(angle)]]) 
+		print rot_matrix
+		self.direction = dot( rot_matrix, self.direction )
 
 	def draw(self, surface):
 		# Draw the the outbound direction.
@@ -227,12 +236,10 @@ class PathCalculator():
 		""" Check collision with lines.
 			returns: The new movement vector. 
 		"""
-		print "Intersects line at %s" % self.pos
 		#http://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
 		normal = intersecting_line.get_normal()
 		u = dot( self.direction, normal ) * normal 
 		w = self.direction - u
-		print normal, u, self.direction
 		return w - u
 	
 	def __repr__(self):
@@ -298,12 +305,12 @@ while not done:
 		elif event.type == pygame.KEYDOWN:
 			if event.key == pygame.K_ESCAPE: # If user clicked close
 				done=True # Flag that we are done so we exit this loop
-			elif event.key == pygame.K_LEFT:
-				player.decrease_bounce_angle()
 			elif event.key == pygame.K_RIGHT:
-				player.increase_bounce_angle()
+				player.path_calc.decrease_angle()
+			elif event.key == pygame.K_LEFT:
+				player.path_calc.increase_angle()
 			elif event.key == pygame.K_SPACE:
-				player.confirm_bounce_angle()
+				player.path_calc.confirm_angle()
 	
 	#Game logic
 	all_sprites_list.update()
