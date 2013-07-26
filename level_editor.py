@@ -42,6 +42,8 @@ target_list = pygame.sprite.Group()
 clicked = []
 clicked_sprites = []
 
+overlay = []
+
 # Keep track of time elapsed, for score
 start = time.clock()
 
@@ -91,18 +93,19 @@ while not done:
 	# Draw lines
 	prev_pos = None
 	for pos in clicked:
-		if prev_pos:
+		if prev_pos != None:
 			pygame.draw.aaline(screen, (0,0,0),
 				[prev_pos[0], prev_pos[1]],
 				[pos[0], pos[1]])
 		prev_pos = pos
-	
-	# Show score
-	elapsed = time.clock() - start
-	font = pygame.font.Font(None, 36)
-	text = font.render("Score: %.0f" % (elapsed*10), True, (0,0,0))
-	textpos = text.get_rect(centerx=screen_width/2)
-	screen.blit(text, textpos)
+
+	prev_pos = None
+	for pos in overlay:
+		if prev_pos != None:
+			pygame.draw.aaline(screen, (0,0,0),
+				[prev_pos[0], prev_pos[1]],
+				[pos[0], pos[1]])
+		prev_pos = pos
 
 	#FPS limited to 60
 	clock.tick(60)
