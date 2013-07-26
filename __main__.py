@@ -149,6 +149,7 @@ class Target(Unit):
 class PathCalculator():
 	MIN_ANGLE = -30
 	MAX_ANGLE = 30
+	MAX_DIRECTIONS = 3
 
 	def __init__(self, unit, player=False):
 		self.pos = unit.center_pos
@@ -157,13 +158,18 @@ class PathCalculator():
 
 		self.angle = 0
 		self.ignore_lines = [] 
-		self.direction_queue = Queue()
+		self.direction_queue = Queue(maxsize=self.MAX_DIRECTIONS)
 		self.calc_next()
 	
 	def next(self):
+		# Sync position so that drift is prevented.
+		self.sync_position()
+		
+		# If the queue is empty, use the current direction.
 		if self.direction_queue.empty():
 			next_direction = self.direction
 			self.calc_next()
+		# Otherwise use the direction in the queue
 		else:
 			next_direction = self.direction_queue.get()
 		print "Next direction for %s: %s" % ( self.unit, next_direction )
@@ -172,8 +178,9 @@ class PathCalculator():
 	def calc_next(self):
 		""" Calculates the next direction of the Unit.
 			returns: A normalized vector, which is the next direction.
+			raises AssertionError: When the Path Calculator cannot
+				find a line to jump to.
 		"""
-		print "Next calculated for %s" % self.unit
 		# Only when self.direction is not the null-vector.
 		if not linalg.norm( self.direction ) == 0.0:
 			direction_line = objects.Line( self.pos, self.pos + 1e10 * self.direction )
@@ -199,9 +206,40 @@ class PathCalculator():
 	def is_collided( self ):
 		movement_line = objects.Line( self.unit.center_pos,
 			self.unit.center_pos + self.unit.movement)
-		intersecting_obstacle = movement_line.closest_intersecting_obstacle(self.unit.pos, obstacles_list)
-		intersecting_line = movement_line.closest_intersection_with_obstacle(self.unit.pos, intersecting_obstacle)
+		intersecting_obstacle = movement_line.closest_intersecting_obstacle(
+			self.unit.center_pos, obstacles_list)
+		intersecting_line = movement_line.closest_intersection_with_obstacle(
+			self.unit.center_pos, intersecting_obstacle)
 		return intersecting_line is not None
+	
+	def sync_position( self ):
+		""" Sync the position of the PathCalculator with the self.unit.
+			This repairs the drift in float calculation.
+		"""
+		# Save the current direction before syncing.
+		previous_direction = self.direction
+		previous_angle = self.angle
+
+		# Start the sync
+		self.pos = self.unit.center_pos
+		self.direction = self.unit.movement
+		self.ignore_lines = []
+
+		new_direction_queue = Queue(maxsize=self.MAX_DIRECTIONS)
+		while not self.direction_queue.empty():
+			direction = self.direction_queue.get()
+			new_direction_queue.put( direction )
+
+			# Jump to a line
+			self.calc_next()
+			# And set the direction as stored in the Queue.
+			self.direction = direction
+		self.direction_queue = new_direction_queue
+
+		# Do the last jump to the latest position.
+		self.calc_next()
+		self.direction = previous_direction
+		self.angle = previous_angle
 	
 	def increase_angle( self ):
 		if self.angle + 10 <= self.MAX_ANGLE:
@@ -216,8 +254,9 @@ class PathCalculator():
 			self.rotate_direction( -10.0/360 * 2 * math.pi )
 	
 	def confirm_angle( self ):
-		self.direction_queue.put( self.direction )
-		self.calc_next()
+		if not self.direction_queue.full():
+			self.direction_queue.put( self.direction )
+			self.calc_next()
 
 	def rotate_direction( self, angle ):
 		rot_matrix = array([[math.cos(angle), math.sin(angle)],
@@ -226,6 +265,8 @@ class PathCalculator():
 		self.direction = dot( rot_matrix, self.direction )
 
 	def draw(self, surface):
+		self.sync_position()
+
 		# Draw the the outbound direction.
 		point2 = 20 * self.direction + self.pos
 		pygame.draw.aaline( surface, (255,0,255),
