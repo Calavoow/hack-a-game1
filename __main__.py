@@ -196,6 +196,7 @@ class PathCalculator():
 			intersecting_line = direction_line.closest_intersection_with_obstacle(
 				self.pos, intersecting_obstacle, ignore_lines=self.ignore_lines)
 			assert intersecting_line is not None, "PathCalculator couldn't find a line to jump to." #Truthy
+			print "Intersecting with: ", intersecting_line
 
 			# Set new position to intersection point.
 			intersecting_point = direction_line.intersection_point( intersecting_line ) 
@@ -217,7 +218,7 @@ class PathCalculator():
 
 	def draw(self, surface):
 		# Draw the the outbound direction.
-		point2 = 6 * self.direction + self.pos
+		point2 = 20 * self.direction + self.pos
 		pygame.draw.aaline( surface, (255,0,255),
 			[self.pos[0], self.pos[1]],
 			[point2[0], point2[1]])
