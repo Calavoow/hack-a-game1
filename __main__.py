@@ -91,8 +91,7 @@ class Button(objects.Polygon):
 		#Collision box
 		self.rect = self.image.get_rect()			
 		#Set position
-		self.rect.x = x
-		self.rect.y = y
+		self.pos = array([x, y])
 		
 		#This function is called then the button is touched
 		self.callback = callback
@@ -128,9 +127,7 @@ class Door(objects.Polygon):
 		#Collision box
 		self.rect = self.image.get_rect()			
 		#Set position to the top left point of a box enclosing the line
-		self.rect.x = left
-		self.rect.y = top
-
+		self.pos = array([ left, top ])
 	
 	# Opens the door, allowing passage through
 	def open(self):
