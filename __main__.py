@@ -234,7 +234,8 @@ class PathCalculator():
 				outbound_direction = self.line_collision(direction_line, intersecting_line)
 				self.direction = outbound_direction / linalg.norm( outbound_direction )
 			else:
-				print "PathCalculator couldn't find a line to jump to."
+				# print "PathCalculator couldn't find a line to jump to."
+				pass
 		# self.direction_queue.put( self.direction )
 
 		# Reset player angle adjustments.
@@ -525,6 +526,9 @@ while not done:
 	# If the newest tile is almost in the screen, add make a new tile
 	if last_tile.pos[0] < screen_width + 400.0:
 		last_tile = tiles.make_random_tile(last_tile, all_sprites_list, obstacles_list)
+	
+	# Check if player has lost
+	done = player.pos[0] + player.rect.width < 0
 
 	speed_y = 0
 	# Player following camera
