@@ -80,6 +80,8 @@ class Unit(pygame.sprite.Sprite):
 		self.pos = pos 
 		# And movement
 		self.movement = movement 
+
+		self.path_calc = PathCalculator(self)
 	
 	@property
 	def pos(self):
@@ -96,21 +98,16 @@ class Unit(pygame.sprite.Sprite):
 		return self.pos + array([self.rect.width/2, self.rect.height/2])
 	
 	def update(self):
-		# Collision with lines 
-		movement_line = objects.Line( self.center_pos,
-			self.center_pos + self.movement)
-		intersecting_obstacle = movement_line.closest_intersecting_obstacle(self.center_pos, obstacles_list)
-		intersecting_line = movement_line.closest_intersection_with_obstacle(self.center_pos, intersecting_obstacle)
-		if intersecting_line:
-			#print "Intersects line at %s" % self.pos
-			#http://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
-			normal = intersecting_line.get_normal()
-			u = dot( self.movement, normal ) * normal 
-			w = self.movement - u
-			self.movement = w - u
-		
+		if self.path_calc.is_collided():
+			new_direction = self.path_calc.next()
+			# Magnitude * normalized direction
+			self.movement = linalg.norm(self.movement) * new_direction
+
 		# Can't do +=
 		self.pos = self.pos + self.movement
+	
+	def __repr__(self):
+		return "%s at pos: %s" % (self.__class__.__name__, self.pos )
 
 class Player(Unit):
 	def __init__(self, pos, movement):
@@ -123,6 +120,8 @@ class Player(Unit):
 
 		self.bounce_angle = 0.0
 		self.bounce_angles = Queue()
+
+		self.path_calc = PathCalculator(self, True)
 
 	def update(self):
 		# Collision with guard
@@ -137,38 +136,14 @@ class Player(Unit):
 			testtesttest=5
 			#print "Collided with target"
 
-		# Collisiion with lines
-		movement_line = objects.Line( self.center_pos,
-			self.center_pos + self.movement)
-		intersecting_obstacle = movement_line.closest_intersecting_obstacle(self.center_pos, obstacles_list)
-		intersecting_line = movement_line.closest_intersection_with_obstacle(self.center_pos, intersecting_obstacle)
-		if intersecting_line:
-			#print "Intersects line at %s" % self.pos
-			#http://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
-			normal = intersecting_line.get_normal()
-			u = dot( self.movement, normal ) * normal 
-			w = self.movement - u
-			self.movement = w - u
-			if not self.bounce_angles.empty():
-				angle = self.bounce_angles.get()
-				rot_matrix = array([[math.cos(angle), math.sin(angle)],
-					[-math.sin(angle), math.cos(angle)]]) 
-				self.movement = dot( rot_matrix, self.movement )
+
+		if self.path_calc.is_collided():
+			print "Collision with line."
+			new_direction = self.path_calc.next()
+			# Magnitude * normalized direction
+			self.movement = linalg.norm(self.movement) * new_direction
 
 		self.pos = self.pos + self.movement
-
-	def increase_bounce_angle( self ):
-		self.bounce_angle += 10.0/360.0 * 2.0 * math.pi
-		print "Increased bounce angle to %s" % self.bounce_angle
-	
-	def decrease_bounce_angle( self ):
-		self.bounce_angle -= 10.0/360.0 * 2.0 * math.pi
-		print "Decreased bounce angle to %s" % self.bounce_angle
-	
-	def confirm_bounce_angle( self ):
-		print "Bounce angle set to %s" % self.bounce_angle
-		self.bounce_angles.put( self.bounce_angle )
-		self.bounce_angle = 0.0
 
 class Guard(Unit):
 	def __init__(self, pos, movement):
@@ -186,16 +161,146 @@ class Target(Unit):
 		self.image.set_colorkey(( 0, 0, 0 ))		  
 		pygame.draw.circle(self.image, ( 31, 196, 255 ), [16,16], 16)
 
-class PathCalculator(pygame.sprite.Sprite):
-	def __init__(self, pos, direction):
-		super(PathCalculator, self).__init__()
-		self.image = pygame.Surface(( 32, 32 ))
 
-		self.pos = pos
-		self.direction = direction
+class PathCalculator():
+	MIN_ANGLE = -30
+	MAX_ANGLE = 30
+	MAX_DIRECTIONS = 3
+
+	def __init__(self, unit, player=False):
+		self.pos = unit.center_pos
+		self.direction = unit.movement
+		self.unit = unit 
+
+		self.angle = 0
+		self.ignore_lines = [] 
+		self.direction_queue = Queue(maxsize=self.MAX_DIRECTIONS)
+		self.calc_next()
 	
-	def update(self):
-		pass
+	def next(self):
+		# Sync position so that drift is prevented.
+		self.sync_position()
+		
+		# If the queue is empty, use the current direction.
+		if self.direction_queue.empty():
+			next_direction = self.direction
+			self.calc_next()
+		# Otherwise use the direction in the queue
+		else:
+			next_direction = self.direction_queue.get()
+		print "Next direction for %s: %s" % ( self.unit, next_direction )
+		return next_direction
+
+	def calc_next(self):
+		""" Calculates the next direction of the Unit.
+			returns: A normalized vector, which is the next direction.
+			raises AssertionError: When the Path Calculator cannot
+				find a line to jump to.
+		"""
+		# Only when self.direction is not the null-vector.
+		if not linalg.norm( self.direction ) == 0.0:
+			direction_line = objects.Line( self.pos, self.pos + 1e10 * self.direction )
+			intersecting_obstacle = direction_line.closest_intersecting_obstacle(
+				self.pos, obstacles_list, ignore_lines=self.ignore_lines)
+			intersecting_line = direction_line.closest_intersection_with_obstacle(
+				self.pos, intersecting_obstacle, ignore_lines=self.ignore_lines)
+			assert intersecting_line is not None, "PathCalculator couldn't find a line to jump to." #Truthy
+
+			# Set new position to intersection point.
+			intersecting_point = direction_line.intersection_point( intersecting_line ) 
+			self.pos = intersecting_point
+			self.ignore_lines = [intersecting_line]
+			
+			# Then figure out the outbound angle.
+			outbound_direction = self.line_collision(direction_line, intersecting_line)
+			self.direction = outbound_direction / linalg.norm( outbound_direction )
+		# self.direction_queue.put( self.direction )
+
+		# Reset player angle adjustments.
+		self.angle = 0
+	
+	def is_collided( self ):
+		movement_line = objects.Line( self.unit.center_pos,
+			self.unit.center_pos + self.unit.movement)
+		intersecting_obstacle = movement_line.closest_intersecting_obstacle(
+			self.unit.center_pos, obstacles_list)
+		intersecting_line = movement_line.closest_intersection_with_obstacle(
+			self.unit.center_pos, intersecting_obstacle)
+		return intersecting_line is not None
+	
+	def sync_position( self ):
+		""" Sync the position of the PathCalculator with the self.unit.
+			This repairs the drift in float calculation.
+		"""
+		# Save the current direction before syncing.
+		previous_direction = self.direction
+		previous_angle = self.angle
+
+		# Start the sync
+		self.pos = self.unit.center_pos
+		self.direction = self.unit.movement
+		self.ignore_lines = []
+
+		new_direction_queue = Queue(maxsize=self.MAX_DIRECTIONS)
+		while not self.direction_queue.empty():
+			direction = self.direction_queue.get()
+			new_direction_queue.put( direction )
+
+			# Jump to a line
+			self.calc_next()
+			# And set the direction as stored in the Queue.
+			self.direction = direction
+		self.direction_queue = new_direction_queue
+
+		# Do the last jump to the latest position.
+		self.calc_next()
+		self.direction = previous_direction
+		self.angle = previous_angle
+	
+	def increase_angle( self ):
+		if self.angle + 10 <= self.MAX_ANGLE:
+			print "Increase angle"
+			self.angle += 10
+			self.rotate_direction( 10.0/360.0 * 2.0 * math.pi )
+
+	def decrease_angle( self ):
+		if self.angle - 10 >= self.MIN_ANGLE:
+			print "Decrease angle"
+			self.angle -= 10
+			self.rotate_direction( -10.0/360 * 2 * math.pi )
+	
+	def confirm_angle( self ):
+		if not self.direction_queue.full():
+			self.direction_queue.put( self.direction )
+			self.calc_next()
+
+	def rotate_direction( self, angle ):
+		rot_matrix = array([[math.cos(angle), math.sin(angle)],
+			[-math.sin(angle), math.cos(angle)]]) 
+		print rot_matrix
+		self.direction = dot( rot_matrix, self.direction )
+
+	def draw(self, surface):
+		self.sync_position()
+
+		# Draw the the outbound direction.
+		point2 = 20 * self.direction + self.pos
+		pygame.draw.aaline( surface, (255,0,255),
+			[self.pos[0], self.pos[1]],
+			[point2[0], point2[1]])
+
+	def line_collision(self, direction, intersecting_line):
+		""" Check collision with lines.
+			returns: The new movement vector. 
+		"""
+		#http://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
+		normal = intersecting_line.get_normal()
+		u = dot( self.direction, normal ) * normal 
+		w = self.direction - u
+		return w - u
+	
+	def __repr__(self):
+		return "PathCalculator for %s" % self.unit
 
 #Initialize pygame
 pygame.init()
@@ -287,6 +392,7 @@ all_sprites_list.add( target_list )
 
 #And set the player
 player = Player( array([119.000000, 120.000000]), array([ 2.0 , 2.0 ]))
+
 all_sprites_list.add(player)
 
 #Keep track of clicked points, for levelbuilding purposes
@@ -307,12 +413,12 @@ while not done:
 		elif event.type == pygame.KEYDOWN:
 			if event.key == pygame.K_ESCAPE: # If user clicked close
 				done=True # Flag that we are done so we exit this loop
-			elif event.key == pygame.K_LEFT:
-				player.decrease_bounce_angle()
 			elif event.key == pygame.K_RIGHT:
-				player.increase_bounce_angle()
+				player.path_calc.decrease_angle()
+			elif event.key == pygame.K_LEFT:
+				player.path_calc.increase_angle()
 			elif event.key == pygame.K_SPACE:
-				player.confirm_bounce_angle()
+				player.path_calc.confirm_angle()
 		elif event.type == pygame.MOUSEBUTTONDOWN:
 			# Left mouse button remembers clicked points, for levelbuilding purposes
 			if event.button == 1:
@@ -333,8 +439,6 @@ while not done:
 				
 				if point != None:
 					point.kill()
-					
-				
 	
 	#Game logic
 	all_sprites_list.update()
@@ -342,6 +446,7 @@ while not done:
 	#Drawing
 	screen.fill((255,255,255))
 	all_sprites_list.draw(screen)
+	player.path_calc.draw(screen)
 
 	#FPS limited to 60
 	clock.tick(60)
