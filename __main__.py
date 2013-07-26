@@ -179,8 +179,8 @@ class Target(Unit):
 
 
 class PathCalculator():
-	MIN_ANGLE = -30
-	MAX_ANGLE = 30
+	MIN_ANGLE = -30./360. * 2. * math.pi
+	MAX_ANGLE = 30./360. * 2. * math.pi
 	MAX_DIRECTIONS = 3
 
 	def __init__(self, unit, player=False):
@@ -322,15 +322,19 @@ class PathCalculator():
 			rotation = min( angle, self.ANGLE_CHANGE )
 		else:
 			rotation = max( angle, -self.ANGLE_CHANGE )
-		self.rotate_direction( rotation )
-	
+		if self.MAX_ANGLE >= self.angle + rotation and self.MIN_ANGLE <= self.angle + rotation:
+			self.angle += rotation
+			self.rotate_direction( rotation )
+		
 	def left_pressed( self ):
 		angle = math.atan2( self.direction[1], self.direction[0] )
 		if angle >= 0:
 			rotation = max( -angle, -self.ANGLE_CHANGE )
 		else:
 			rotation = min( -angle, self.ANGLE_CHANGE )
-		self.rotate_direction( rotation )
+		if self.MAX_ANGLE >= self.angle + rotation and self.MIN_ANGLE <= self.angle + rotation:
+			self.angle += rotation
+			self.rotate_direction( rotation )
 	
 	def up_pressed( self ):
 		angle = math.atan2( self.direction[0], self.direction[1] )
@@ -338,7 +342,9 @@ class PathCalculator():
 			rotation = min( angle, self.ANGLE_CHANGE )
 		else:
 			rotation = max( angle, -self.ANGLE_CHANGE )
-		self.rotate_direction( rotation )
+		if self.MAX_ANGLE >= self.angle + rotation and self.MIN_ANGLE <= self.angle + rotation:
+			self.angle += rotation
+			self.rotate_direction( rotation )
 	
 	def down_pressed( self ):
 		angle = math.atan2( self.direction[0], self.direction[1] )
@@ -346,7 +352,9 @@ class PathCalculator():
 			rotation = max( -angle, -self.ANGLE_CHANGE )
 		else:
 			rotation = min( -angle, self.ANGLE_CHANGE )
-		self.rotate_direction( rotation )
+		if self.MAX_ANGLE >= self.angle + rotation and self.MIN_ANGLE <= self.angle + rotation:
+			self.angle += rotation
+			self.rotate_direction( rotation )
 	
 	def confirm_angle( self ):
 		if not self.direction_queue.full():
