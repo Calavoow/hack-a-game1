@@ -375,9 +375,14 @@ class PathCalculator():
 	def rotate_direction_calc( self, angle ):
 		""" Calculate the new direction when self is rotated an angle.
 		"""
+		self.direction = PathCalculator.rotate_array( self.direction, angle )
+	
+	@staticmethod
+	def rotate_array( arr, angle ):
 		rot_matrix = array([[math.cos(angle), math.sin(angle)],
 			[-math.sin(angle), math.cos(angle)]]) 
-		self.direction = dot( rot_matrix, self.direction )
+		return dot( rot_matrix, arr )
+		
 
 	def draw(self, surface):
 		self.sync_position( surface = surface )
@@ -387,6 +392,20 @@ class PathCalculator():
 		pygame.draw.aaline( surface, (255,0,255),
 			[self.pos[0], self.pos[1]],
 			[point2[0], point2[1]])
+
+		# Draw the limits
+		LENGTH = 15
+		rotation = math.atan2( self.direction[1], self.direction[0] )
+		print rotation, self.angle, rotation-self.angle
+		limits = [ rotation - self.angle + self.MAX_ANGLE,
+			rotation - self.angle + self.MIN_ANGLE,
+			self.forbidden_angle1, self.forbidden_angle2]
+		for limit in limits:
+			point2 = LENGTH * array([ cos(limit), sin(limit) ]) + self.pos
+			pygame.draw.aaline( surface, (255,100,255),
+				[self.pos[0], self.pos[1]],
+				[point2[0], point2[1]])
+
 	
 	def __repr__(self):
 		return "PathCalculator for %s" % self.unit
