@@ -55,10 +55,10 @@ class Unit(pygame.sprite.Sprite):
 	def center_pos( self ):
 		return self.pos + array([self.collision_point[0], self.collision_point[1]])
 	
-	def update(self, x_offset):
-		# First update position according to x_offset.
-		self.path_calc.update( x_offset )
-		self.pos = self.pos + array([x_offset, 0.0])
+	def update(self, x_offset, y_offset):
+		# First update position according to x/y_offset.
+		self.path_calc.update( x_offset, y_offset)
+		self.pos = self.pos + array([x_offset, y_offset])
 
 		if self.path_calc.is_collided():
 			self.bounce()
@@ -103,7 +103,7 @@ class Player(Unit):
 		self.delay = 6
 		self.pause = 0
 
-	def update(self, x_offset):
+	def update(self, x_offset, y_offset):
 		# Collision with guard
 		collision_sprite = pygame.sprite.spritecollideany( self, guard_list )
 		if collision_sprite:
@@ -116,7 +116,7 @@ class Player(Unit):
 			testtesttest=5
 			#print "Collided with target"
 
-		super(Player, self).update( x_offset )
+		super(Player, self).update( x_offset, y_offset )
 
 		# Animate the sprite
 		self.pause += 1
@@ -193,8 +193,8 @@ class PathCalculator():
 		self.direction_queue = Queue(maxsize=self.MAX_DIRECTIONS)
 		self.calc_next()
 	
-	def update( self, x_offset ):
-		self.pos = self.pos + array([x_offset, 0])
+	def update( self, x_offset, y_offset ):
+		self.pos = self.pos + array([x_offset, y_offset])
 	
 	def next(self):
 		# Sync position so that drift is prevented.
@@ -526,8 +526,17 @@ while not done:
 					point.kill()
 	
 	#Game logic
-	all_sprites_list.update(speed)
-	last_tile.update(speed)
+	speed_y = 0
+
+	# Player following camera
+	player_y = player.pos[1] - screen_height/2
+	if player_y < 0:
+		speed_y = max( player_y, -0.5 )
+	elif player_y > 0:
+		speed_y = min( player_y, 0.5) 
+	
+	all_sprites_list.update(speed, speed_y)
+	last_tile.update(speed, speed_y)
 	
 	#Drawing
 	screen.fill((255,255,255))
