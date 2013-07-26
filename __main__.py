@@ -302,47 +302,50 @@ class PathCalculator():
 				[old_pos[0], old_pos[1]],
 				[self.pos[0], self.pos[1]])
 	
-	def increase_angle( self ):
-		if self.angle + 10 <= self.MAX_ANGLE:
-			self.angle += 10
-			# self.rotate_direction( 10.0/360.0 * 2.0 * math.pi )
+	def line_collision(self, direction, intersecting_line):
+		""" Check collision with lines.
+			returns: The new movement vector. 
+		"""
+		#http://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
+		normal = intersecting_line.get_normal()
+		u = dot( self.direction, normal ) * normal 
+		w = self.direction - u
+		return w - u
 
-	def decrease_angle( self ):
-		if self.angle - 10 >= self.MIN_ANGLE:
-			self.angle -= 10
-			#@ self.rotate_direction( -10.0/360 * 2 * math.pi )
-	
+	""" The interface with the user
+	"""
+	ANGLE_CHANGE = math.pi / 64
 	def right_pressed( self ):
 		# The angle as compared to the left direction ([1, 0])
 		angle = math.atan2( self.direction[1], self.direction[0] )
 		if angle >= 0:
-			rotation = min( angle, math.pi/16 )
+			rotation = min( angle, self.ANGLE_CHANGE )
 		else:
-			rotation = max( angle, -math.pi/16 )
+			rotation = max( angle, -self.ANGLE_CHANGE )
 		self.rotate_direction( rotation )
 	
 	def left_pressed( self ):
 		angle = math.atan2( self.direction[1], self.direction[0] )
 		if angle >= 0:
-			rotation = max( -angle, -math.pi/16 )
+			rotation = max( -angle, -self.ANGLE_CHANGE )
 		else:
-			rotation = min( -angle, math.pi/16 )
+			rotation = min( -angle, self.ANGLE_CHANGE )
 		self.rotate_direction( rotation )
 	
 	def up_pressed( self ):
 		angle = math.atan2( self.direction[0], self.direction[1] )
 		if angle >= 0:
-			rotation = min( angle, math.pi/16 )
+			rotation = min( angle, self.ANGLE_CHANGE )
 		else:
-			rotation = max( angle, -math.pi/16 )
+			rotation = max( angle, -self.ANGLE_CHANGE )
 		self.rotate_direction( rotation )
 	
 	def down_pressed( self ):
 		angle = math.atan2( self.direction[0], self.direction[1] )
 		if angle >= 0:
-			rotation = max( -angle, -math.pi/16 )
+			rotation = max( -angle, -self.ANGLE_CHANGE )
 		else:
-			rotation = min( -angle, math.pi/16 )
+			rotation = min( -angle, self.ANGLE_CHANGE )
 		self.rotate_direction( rotation )
 	
 	def confirm_angle( self ):
@@ -363,16 +366,6 @@ class PathCalculator():
 		pygame.draw.aaline( surface, (255,0,255),
 			[self.pos[0], self.pos[1]],
 			[point2[0], point2[1]])
-
-	def line_collision(self, direction, intersecting_line):
-		""" Check collision with lines.
-			returns: The new movement vector. 
-		"""
-		#http://stackoverflow.com/questions/573084/how-to-calculate-bounce-angle
-		normal = intersecting_line.get_normal()
-		u = dot( self.direction, normal ) * normal 
-		w = self.direction - u
-		return w - u
 	
 	def __repr__(self):
 		return "PathCalculator for %s" % self.unit
@@ -526,14 +519,6 @@ while not done:
 		elif event.type == pygame.KEYDOWN:
 			if event.key == pygame.K_ESCAPE: # If user clicked close
 				done=True # Flag that we are done so we exit this loop
-			elif event.key == pygame.K_RIGHT:
-				player.path_calc.right_pressed()
-			elif event.key == pygame.K_LEFT:
-				player.path_calc.left_pressed()
-			elif event.key == pygame.K_DOWN:
-				player.path_calc.down_pressed()
-			elif event.key == pygame.K_UP:
-				player.path_calc.up_pressed()
 			elif event.key == pygame.K_SPACE:
 				player.path_calc.confirm_angle()
 		elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -558,6 +543,17 @@ while not done:
 				
 				if point != None:
 					point.kill()
+
+	# Check for continuous key presses.
+	pressed = pygame.key.get_pressed()
+	if pressed[pygame.K_RIGHT]:
+		player.path_calc.right_pressed()
+	if pressed[pygame.K_LEFT]:
+		player.path_calc.left_pressed()
+	if pressed[pygame.K_DOWN]:
+		player.path_calc.down_pressed()
+	if pressed[pygame.K_UP]:
+		player.path_calc.up_pressed()
 	
 	#Game logic
 	# If the newest tile is almost in the screen, add make a new tile
