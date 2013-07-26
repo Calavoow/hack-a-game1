@@ -413,19 +413,13 @@ obstacles_list.append(barrier)
 all_sprites_list.add(barrier)
 
 # Make starting tile
-t1 = tiles.make_tile(0, None, all_sprites_list, obstacles_list)
-t1.place_at(array([0.0, 400.0]))
+# and keep track of last added tile
+last_tile = tiles.make_start_tile(array([0.0, 400.0]), all_sprites_list, obstacles_list)
+#last_tile = tiles.make_tile(3, last_tile, all_sprites_list, obstacles_list)
 
 #And set the player
 player = Player( array([50.0, 400.0]), array([ 2.0 , 2.0 ]))
 all_sprites_list.add(player)
-
-#Keep track of clicked points, for levelbuilding purposes
-clicked = []
-clicked_sprites = []
-
-# Keep track of last added tile
-last_tile = t1
 
 # Keep track of time elapsed, for score
 start = time.clock()
@@ -446,28 +440,6 @@ while not done:
 				done=True # Flag that we are done so we exit this loop
 			elif event.key == pygame.K_SPACE:
 				player.path_calc.confirm_angle()
-		elif event.type == pygame.MOUSEBUTTONDOWN:
-			# Left mouse button remembers clicked points, for levelbuilding purposes
-			if event.button == 1:
-				point = Point(event.pos[0] - 3, event.pos[1] - 3)
-				clicked.append( event.pos )
-				print "Clicked: array([%f, %f])," % (event.pos)
-				clicked_sprites.append(point)
-				all_sprites_list.add(point)
-			# Right mouse button prints the remembered points (so that no other prints can get inbetween)
-			elif event.button == 3:
-				print("REMEMBERED POINTS ----")
-				for pos in clicked:
-					print "array([%f, %f])," % (pos)
-				print("END OF POINTS --------")
-			# Middle mouse button can be used to remove wrongly placed points
-			elif event.button == 2:
-				clicked.pop()
-				
-				point = clicked_sprites.pop()
-				
-				if point != None:
-					point.kill()
 
 	# Check for continuous key presses.
 	pressed = pygame.key.get_pressed()
@@ -505,15 +477,6 @@ while not done:
 	screen.fill((255,255,255))
 	all_sprites_list.draw(screen)
 	player.path_calc.draw(screen)
-
-	# Draw lines
-	prev_pos = None
-	for pos in clicked:
-		if prev_pos:
-			pygame.draw.aaline(screen, (0,0,0),
-				[prev_pos[0], prev_pos[1]],
-				[pos[0], pos[1]])
-		prev_pos = pos
 	
 	# Show score
 	elapsed = time.clock() - start
