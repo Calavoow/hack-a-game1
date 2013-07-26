@@ -492,43 +492,43 @@ Block(screen_width/2 + 80.0, screen_height/2 + 80.0)
 	obstacles_list.append(block)
 """
 polyframe1 = objects.PolygonFrame([
-array([50.000000, 43.000000]),
-array([386.000000, 46.000000]),
-array([396.000000, 330.000000]),
-array([253.000000, 336.000000]),
-array([240.000000, 757.000000]),
-array([405.000000, 750.000000]),
-array([410.000000, 476.000000]),
-array([799.000000, 461.000000]),
-array([798.000000, 611.000000]),
-array([943.000000, 618.000000]),
-array([1007.000000, 469.000000]),
-array([916.000000, 360.000000]),
-array([990.000000, 226.000000]),
-array([934.000000, 153.000000]),
-array([725.000000, 145.000000]),
-array([688.000000, 307.000000]),
-array([756.000000, 304.000000]),
-array([686.000000, 437.000000]),
-array([456.000000, 439.000000]),
-array([467.000000, 313.000000]),
-array([597.000000, 306.000000]),
-array([591.000000, 16.000000]),
-array([929.000000, 19.000000]),
-array([1031.000000, 22.000000]),
-array([1133.000000, 228.000000]),
-array([1083.000000, 364.000000]),
-array([1173.000000, 476.000000]),
-array([1120.000000, 641.000000]),
-array([1132.000000, 803.000000]),
-array([787.000000, 774.000000]),
-array([667.000000, 772.000000]),
-array([647.000000, 573.000000]),
-array([535.000000, 579.000000]),
-array([535.000000, 759.000000]),
-array([523.000000, 878.000000]),
-array([40.000000, 858.000000]),
-array([46.000000, 336.000000])
+	array([50.000000, 43.000000]),
+	array([386.000000, 46.000000]),
+	array([396.000000, 330.000000]),
+	array([253.000000, 336.000000]),
+	array([240.000000, 757.000000]),
+	array([405.000000, 750.000000]),
+	array([410.000000, 476.000000]),
+	array([799.000000, 461.000000]),
+	array([798.000000, 611.000000]),
+	array([943.000000, 618.000000]),
+	array([1007.000000, 469.000000]),
+	array([916.000000, 360.000000]),
+	array([990.000000, 226.000000]),
+	array([934.000000, 153.000000]),
+	array([725.000000, 145.000000]),
+	array([688.000000, 307.000000]),
+	array([756.000000, 304.000000]),
+	array([686.000000, 437.000000]),
+	array([456.000000, 439.000000]),
+	array([467.000000, 313.000000]),
+	array([597.000000, 306.000000]),
+	array([591.000000, 16.000000]),
+	array([929.000000, 19.000000]),
+	array([1031.000000, 22.000000]),
+	array([1133.000000, 228.000000]),
+	array([1083.000000, 364.000000]),
+	array([1173.000000, 476.000000]),
+	array([1120.000000, 641.000000]),
+	array([1132.000000, 803.000000]),
+	array([787.000000, 774.000000]),
+	array([667.000000, 772.000000]),
+	array([647.000000, 573.000000]),
+	array([535.000000, 579.000000]),
+	array([535.000000, 759.000000]),
+	array([523.000000, 878.000000]),
+	array([40.000000, 858.000000]),
+	array([46.000000, 336.000000])
 ])
 
 all_sprites_list.add(polyframe1)
@@ -536,9 +536,9 @@ obstacles_list = [polyframe1]
 
 #Add guards
 guard_list = pygame.sprite.Group()
-# guard_list.add( Guard( array([83.000000, 430.000000]), array([ 0.5, 2.0 ])))
-# guard_list.add( Guard( array([461.000000, 817.000000]), array([ 0.5, 2.0 ])))
-# guard_list.add( Guard( array([1069.000000, 480.000000]), array([ 0.5, 2.0 ])))
+guard_list.add( Guard( array([83.000000, 430.000000]), array([ 0.5, 2.0 ])))
+guard_list.add( Guard( array([461.000000, 817.000000]), array([ 0.5, 2.0 ])))
+guard_list.add( Guard( array([1069.000000, 480.000000]), array([ 0.5, 2.0 ])))
 
 all_sprites_list.add( guard_list )
 
@@ -572,7 +572,7 @@ all_sprites_list.add(Point(185.27589661,  336.0))
 # Used to manage how fast the screen updates
 clock=pygame.time.Clock()
 done = False
-speed = -0.5
+speed = -0.0
 
 while not done:
 	#Event processing
@@ -592,18 +592,20 @@ while not done:
 			# Left mouse button remembers clicked points, for levelbuilding purposes
 			if event.button == 1:
 				point = Point(event.pos[0] - 3, event.pos[1] - 3)
-				clicked.append("array([%f, %f])," % (event.pos))
+				clicked.append( event.pos )
+				print "Clicked: array([%f, %f])," % (event.pos)
 				clicked_sprites.append(point)
 				all_sprites_list.add(point)
 			# Right mouse button prints the remembered points (so that no other prints can get inbetween)
 			elif event.button == 3:
 				print("REMEMBERED POINTS ----")
-				for point in clicked:
-					print point
+				for pos in clicked:
+					print "array([%f, %f])," % (pos)
 				print("END OF POINTS --------")
 			# Middle mouse button can be used to remove wrongly placed points
 			elif event.button == 2:
 				clicked.pop()
+				
 				point = clicked_sprites.pop()
 				
 				if point != None:
@@ -616,6 +618,15 @@ while not done:
 	screen.fill((255,255,255))
 	all_sprites_list.draw(screen)
 	player.path_calc.draw(screen)
+
+	# Draw lines
+	prev_pos = None
+	for pos in clicked:
+		if prev_pos:
+			pygame.draw.aaline(screen, (0,0,0),
+				[prev_pos[0], prev_pos[1]],
+				[pos[0], pos[1]])
+		prev_pos = pos
 
 	#FPS limited to 60
 	clock.tick(60)
