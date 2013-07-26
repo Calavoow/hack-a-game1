@@ -13,6 +13,15 @@ class Line:
 	# custom toString method (called __repr__ in python)
 	def __repr__(self):
 		return  "LINE[(%f, %f), (%f, %f)]" % (self.p1[0], self.p1[1], self.p2[0], self.p2[1])
+	
+	def __eq__(self, other):
+		if type(self) != type(other):
+			return False
+		else:
+			if (self.p1[0] == other.p1[0]) and (self.p1[1] == other.p1[1]) and (self.p2[0] == other.p2[0]) and (self.p2[1] == other.p2[1]):
+				return True
+			else:
+				return False
 
 	#Checks if this line segment intersects with another line segment
 	#From: http://stackoverflow.com/questions/7069420/check-if-two-line-segments-are-colliding-only-check-if-they-are-intersecting-n
@@ -179,4 +188,15 @@ class Obstacle(pygame.sprite.Sprite):
 	def translated_lines(self):
 		def translate(line): return line.translate(array([self.rect.x, self.rect.y]))
 		return map(translate, self.lines)
+	
+
+# l1 = Line(array([0.0, 0.0]), array([3.0, 3.0]))
+# l2 = Line(array([1.0, -1.0]), array([1.0, 2.0]))
+# l2c = Line(array([1.0, -1.0]), array([1.0, 2.0]))
+# 
+# obs = Obstacle([l2])
+# obs.rect = pygame.Rect([0,0,1,1])
+# 
+# 
+# print "closest_intersection : ", l1.closest_intersecting_obstacle(array([0.0, 0.0]), [obs])
 
