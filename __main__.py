@@ -452,20 +452,19 @@ for element in [
 	all_sprites_list.add(element)
 	obstacles_list.append(element)
 """
+# Make a static barrier on the right side of the screen
+barrier = StaticObstacle( array([0.0, 0.0]), array([screen_width, screen_height]), [
+	Line(array([screen_width-5, 0.0]), array([screen_width-5, screen_height]))
+])
+obstacles_list.append(barrier)
+all_sprites_list.add(barrier)
 
-# Make a tile to start off with
-"""
-start_tile = tiles.get_tile(0)
-start_tile.add_sprites_to(all_sprites_list)
-start_tile.add_obstacles_to(obstacles_list)
-start_tile.pos = array([0.0, 0.0])
-"""
-# Make another tile
+# Make starting tile
 t1 = tiles.make_tile(0, None, all_sprites_list, obstacles_list)
 t1.place_at(array([0.0, 400.0]))
 
 #And set the player
-player = Player( array([50.0, 450.0]), array([ 2.0 , 2.0 ]))
+player = Player( array([50.0, 400.0]), array([ 2.0 , 2.0 ]))
 all_sprites_list.add(player)
 
 #Keep track of clicked points, for levelbuilding purposes
