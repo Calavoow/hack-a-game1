@@ -113,6 +113,26 @@ class Line:
 			return None
 		else:
 			return self.closest_intersection(pos, obstacle.translated_lines(), ignore_lines = ignore_lines)
+	
+	# The faster, optimized version
+	def closest_intersection_with_obstacles(self, pos, obstacle_list, ignore_lines = []):
+		closest_obstacle = None
+		closest_line = None
+		smallest_dist = float("inf")
+		
+		for obstacle in obstacle_list:
+			# Get the closest line in the obstacle
+			obstacle_line = self.closest_intersection_with_obstacle(pos, obstacle, ignore_lines = ignore_lines )
+			if obstacle_line != None:
+				intersection_point = obstacle_line.intersection_point( self )
+				dist = linalg.norm( intersection_point - pos )
+				# Check if this object has the smallest distance so far
+				if dist < smallest_dist:
+					smallest_dist = dist
+					closest_line = obstacle_line
+					closest_obstacle = obstacle
+		
+		return (closest_obstacle, closest_line)
 		
 	
 	#Returns the a and b of the (y = ax + b) representation of this line

@@ -192,6 +192,9 @@ class PathCalculator():
 		self.ignore_lines = [] 
 		self.direction_queue = Queue(maxsize=self.MAX_DIRECTIONS)
 		self.calc_next()
+		
+		# Caching last collision
+		self.cached_collision = (None, None)
 	
 	def update( self, x_offset, y_offset ):
 		self.pos = self.pos + array([x_offset, y_offset])
@@ -219,10 +222,7 @@ class PathCalculator():
 		# Only when self.direction is not the null-vector.
 		if not linalg.norm( self.direction ) == 0.0:
 			direction_line = Line( self.pos, self.pos + 1e10 * self.direction )
-			intersecting_obstacle = direction_line.closest_intersecting_obstacle(
-				self.pos, obstacles_list, ignore_lines=self.ignore_lines)
-			intersecting_line = direction_line.closest_intersection_with_obstacle(
-				self.pos, intersecting_obstacle, ignore_lines=self.ignore_lines)
+			intersecting_obstacle, intersecting_line = direction_line.closest_intersection_with_obstacles(self.pos, obstacles_list, ignore_lines = self.ignore_lines)
 
 			if intersecting_line is not None:
 				# Set new position to intersection point.
@@ -244,21 +244,13 @@ class PathCalculator():
 	def is_collided( self ):
 		movement_line = Line( self.unit.center_pos,
 			self.unit.center_pos + self.unit.movement)
-		intersecting_obstacle = movement_line.closest_intersecting_obstacle(
-			self.unit.center_pos, obstacles_list)
-		intersecting_line = movement_line.closest_intersection_with_obstacle(
-			self.unit.center_pos, intersecting_obstacle)
-		return intersecting_line is not None
+		self.cached_collision = movement_line.closest_intersection_with_obstacles(self.unit.center_pos, obstacles_list)
+		obstacle, line = self.cached_collision
+		return line is not None
 	
 	# Can be called after is_collided to get collided obstacle and line
 	def get_collision( self ):
-		movement_line = Line( self.unit.center_pos,
-			self.unit.center_pos + self.unit.movement)
-		intersecting_obstacle = movement_line.closest_intersecting_obstacle(
-			self.unit.center_pos, obstacles_list)
-		intersecting_line = movement_line.closest_intersection_with_obstacle(
-			self.unit.center_pos, intersecting_obstacle)	
-		return (intersecting_obstacle, intersecting_line)
+		return self.cached_collision
 
 	def sync_position( self, surface=None ):
 		""" Sync the position of the PathCalculator with the self.unit.
@@ -465,7 +457,8 @@ while not done:
 		last_tile = tiles.make_random_tile(last_tile, all_sprites_list, obstacles_list)
 	
 	# Check if player has lost
-	done = player.pos[0] + player.rect.width < 0
+	if player.pos[0] + player.rect.width < 0:
+		done = True
 
 	speed_y = 0
 	# Player following camera
